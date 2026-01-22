@@ -100,6 +100,16 @@ python3 d4u_qa_validator.py
 3.  **Compliance:** Busca por links proibidos e checa o tamanho do conteúdo.
 4.  **Scoring:** Dá uma nota de 0 a 100 para cada artigo individualmente.
 
+## 💡 Máquina de Ideias (Topic Creator)
+Precisa de pautas novas? O sistema brainstorming para você.
+
+```bash
+python3 d4u_topic_creator.py --count 50
+```
+
+*   **Inteligência:** Analisa tendências de imigração e "dores" latentes.
+*   **Output:** Gera uma tabela (`relatorios/sugestao_temas...csv`) com Título (PT), Título (ES) e Potencial Viral.
+
 ---
 
 > *"A melhor maneira de prever o futuro é criá-lo."*
