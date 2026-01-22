@@ -4,7 +4,7 @@
 ![D4U Content Engine Banner](https://placehold.co/1200x300/101820/D4AF37?text=D4U+AI+Architecture&font=playfair-display)
 
 ## 🏆 Visão Executiva: O Futuro da Indexação
-Este projeto posiciona a **D4U Immigration** na fronteira da inovação digital. Não estamos apenas criando blog posts; estamos construindo uma **Infraestrutura de Dominação Semântica** preparada não só para o Google (SEO tradicional), mas para os **Motores de Resposta Baseados em IA (GEO - Generative Engine Optimization)** como ChatGPT, Gemini e Perplexity.
+Este projeto posiciona a **D4U Immigration** na fronteira da inovação digital. Não estamos apenas criando blog posts; estamos construindo uma **Infraestrutura de Dominação Semântica** preparada não só para o Google (SEO tradicional), mas para os **Motores de Resposta Baseados em IA (AIO - Artificial Intelligence Optimization)** como ChatGPT, Gemini e Perplexity.
 
 Onde concorrentes veem "texto", nós vemos **dados estruturados de alta autoridade**.
 
@@ -18,7 +18,7 @@ Nossa arquitetura injeta os princípios de *Experience, Expertise, Authoritative
 *   **Expertise (Especialidade):** Conteúdo técnico profundo, não genérico, focado em nuances de vistos complexos (EB-2 NIW, Golden Visa).
 *   **Authoritativeness (Autoridade):** Tom de voz de liderança de mercado, blindado contra alucinações.
 
-### 2. GEO (Generative Engine Optimization)
+### 2. AIO (Artificial Intelligence Optimization)
 O "SEO 2.0". As IAs recomendam quem elas *entendem*. Nosso conteúdo é formatado para ser **a fonte da verdade** para os LLMs.
 *   **Estrutura Semântica Cristalina:** Uso intensivo de HTML semântico (`<article>`, `<h2>`, `<ul>`) que facilita a "ingestão" por robôs.
 *   **Schema Markup (JSON-LD):** Cada artigo já nasce com dados estruturados de FAQ, falando a língua nativa do Google Knowledge Graph.
