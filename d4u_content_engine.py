@@ -14,10 +14,10 @@ import pandas as pd
 warnings.filterwarnings("ignore")
 
 # --- Configuration ---
-CSV_INPUT_PATH = "relatorios/planejamento_temas_latam.csv"
+CSV_INPUT_PATH = "relatorios/sugestao_temas_20260122_1804.csv"
 RULES_PATH = "regras_geracao/schema_conteudo_latam_v9.json"
-OUTPUT_DIR = "output_csv_batches"
-BATCH_SIZE = 10
+OUTPUT_DIR = "output_csv_batches_v2"
+BATCH_SIZE = 20
 
 # ANSI Colors for CLI
 class Colors:
@@ -92,6 +92,7 @@ def parse_response(response_text):
         
     return post_content, meta_title, meta_desc
 
+
 def main():
     parser = argparse.ArgumentParser(description="D4U Content Engine (CSV Batch Mode)")
     parser.add_argument("--api_key", help="Google Gemini API Key", required=True)
@@ -100,7 +101,7 @@ def main():
     parser.add_argument("--max_batches", type=int, default=None, help="Maximum number of batches to process")
     args = parser.parse_args()
 
-    print(f"{Colors.HEADER}=== D4U CONTENT ENGINE (CSV BATCH MODE) ==={Colors.ENDC}")
+    print(f"{Colors.HEADER}=== D4U CONTENT ENGINE V2 (CSV BATCH MODE) ==={Colors.ENDC}")
     
     # 1. Setup
     if not os.path.exists(OUTPUT_DIR):
@@ -114,12 +115,21 @@ def main():
     # 2. Read Topics
     df_topics = pd.read_csv(CSV_INPUT_PATH)
     topics = []
+    
+    # Support both old and new CSV formats
     for index, row in df_topics.iterrows():
-        t = row.get('Localized_ES_Draft') or row.get('Original_PT')
-        if pd.notna(t) and str(t).strip():
-            topics.append(str(t).strip())
+        # New format (Topic Creator)
+        t_es = row.get('topic_es')
+        if pd.notna(t_es) and str(t_es).strip():
+             topics.append(str(t_es).strip())
+             continue
+             
+        # Old format fallback
+        t_old = row.get('Localized_ES_Draft') or row.get('Original_PT')
+        if pd.notna(t_old) and str(t_old).strip():
+            topics.append(str(t_old).strip())
             
-    print(f"{Colors.OKCYAN}[INFO] Loaded {len(topics)} topics.{Colors.ENDC}")
+    print(f"{Colors.OKCYAN}[INFO] Loaded {len(topics)} topics from {CSV_INPUT_PATH}.{Colors.ENDC}")
 
     # 3. Batch Processing
     total_batches = (len(topics) + BATCH_SIZE - 1) // BATCH_SIZE

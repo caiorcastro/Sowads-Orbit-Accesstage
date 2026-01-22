@@ -113,7 +113,7 @@ class D4UValidator:
 
 def main():
     parser = argparse.ArgumentParser(description="D4U Content Quality Validator")
-    parser.add_argument("--path", default="output_csv_batches/*.csv", help="Path glob to CSV input files")
+    parser.add_argument("--path", default="output_csv_batches*/*.csv", help="Path glob to CSV input files")
     args = parser.parse_args()
     
     validator = D4UValidator()

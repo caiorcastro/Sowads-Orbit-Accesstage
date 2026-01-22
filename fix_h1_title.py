@@ -57,7 +57,7 @@ def fix_batch(file_path):
         print(f" >> No H1 changes needed for {os.path.basename(file_path)}")
 
 def main():
-    files = glob.glob("output_csv_batches/*.csv")
+    files = glob.glob("output_csv_batches*/*.csv")
     for f in files:
         fix_batch(f)
 
