@@ -17,7 +17,7 @@ class Colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
 
-RULES_PATH = "regras_geracao/schema_conteudo_latam_v9.json"
+RULES_PATH = "regras_geracao/schema_orbit_ai_v1.json"
 
 def load_rules():
     with open(RULES_PATH, 'r', encoding='utf-8') as f:
@@ -78,7 +78,7 @@ def generate_topics(api_key, count, explicit_theme=None, model_name="gemini-2.5-
         return topics_us + topics_uae
 
 def main():
-    print(f"{Colors.HEADER}=== D4U TOPIC CREATOR (AI BRAINSTORM) ==={Colors.ENDC}")
+    print(f"{Colors.HEADER}=== ORBIT AI TOPIC CREATOR (AI BRAINSTORM) ==={Colors.ENDC}")
     
     # Interactive or Args
     parser = argparse.ArgumentParser()

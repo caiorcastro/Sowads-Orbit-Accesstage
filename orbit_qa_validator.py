@@ -8,7 +8,7 @@ from colorama import Fore, Style, init
 
 init(autoreset=True)
 
-class D4UValidator:
+class OrbitValidator:
     def __init__(self):
         self.rules = {
             "no_json_ld": r'<script type="application/ld\+json">',
@@ -60,7 +60,7 @@ class D4UValidator:
         return max(0, score), issues
 
     def run(self, input_path):
-        print(f"{Fore.CYAN}{Style.BRIGHT}=== D4U QUALITY VALIDATOR v1.0 ==={Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{Style.BRIGHT}=== ORBIT AI QUALITY VALIDATOR v1.0 ==={Style.RESET_ALL}")
         
         files = glob.glob(input_path)
         if not files:
@@ -112,11 +112,11 @@ class D4UValidator:
                  print(f"{Fore.RED}STATUS: NEEDS OPTIMIZATION ⚠️{Style.RESET_ALL}")
 
 def main():
-    parser = argparse.ArgumentParser(description="D4U Content Quality Validator")
+    parser = argparse.ArgumentParser(description="Orbit AI Content Quality Validator")
     parser.add_argument("--path", default="output_csv_batches*/*.csv", help="Path glob to CSV input files")
     args = parser.parse_args()
     
-    validator = D4UValidator()
+    validator = OrbitValidator()
     validator.run(args.path)
 
 if __name__ == "__main__":

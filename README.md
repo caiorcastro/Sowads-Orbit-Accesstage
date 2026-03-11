@@ -1,170 +1,86 @@
-# 🚀 D4U HYPER-CONTENT ENGINE: O Protocolo de Dominação AIO
-> **A Vanguarda da Engenharia de Conteúdo com IA Generativa.**
-> *Não é apenas criação de texto. É ocupação de território digital.*
+# Sowads Orbit AI — Content Engine
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-FFE873?style=for-the-badge&logo=python&logoColor=black)](https://python.org)
-[![AI Model](https://img.shields.io/badge/Swarm_Intelligence-Gemini_Pro_%2B_Auditors-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
-[![Compliance](https://img.shields.io/badge/Google_Compliance-Webmaster_Tools_Strict-success?style=for-the-badge&logo=google-search-console&logoColor=white)](https://developers.google.com/search/docs)
-[![Uniqueness](https://img.shields.io/badge/Uniqueness_Guard-Anti--Plagiarism_Agent-FF0000?style=for-the-badge&logo=shield&logoColor=white)](https://copyleaks.com/)
-[![AIO Score](https://img.shields.io/badge/AIO_Score-98.5%2F100-purple?style=for-the-badge&logo=openai&logoColor=white)](https://www.perplexity.ai/)
+Motor de conteudo AIO/SEO com IA para escalar autoridade digital. Gera artigos otimizados para WordPress cruzando necessidades de verticais de negocios com as solucoes da Sowads.
 
----
+## O que e a Sowads
 
-## 🏆 Visão Executiva: Infraestrutura de Guerra Semântica
+Agencia de marketing digital especializada em **SEO, AIO e gestao estrategica de midia paga**. Meta Tech Provider.
 
-Este projeto não é um "gerador de blog". É a **Arma Secreta da D4U Immigration** para dominar a SERP (Search Engine Results Page).
+### Produtos
 
-Deixamos de jogar o jogo do layout e passamos a jogar o jogo dos dados. Construímos uma **Infraestrutura de Dominação Semântica** preparada para aniquilar concorrentes tanto no Google clássico quanto nos novos **Motores de Resposta (AIO - Artificial Intelligence Optimization)** como ChatGPT, Gemini, Perplexity e SearchGPT.
+| Produto | O que faz |
+|---|---|
+| **Orbit AI** | Inteligencia de conteudo + SEO com IA para autoridade digital e posicionamento organico/AIO |
+| **Automacao Meta Ads** | Ferramenta que conecta com bancos de dados e publica campanhas completas com poucos cliques |
 
-**Nossa missão:** Onde o concorrente vê "artigo", nós entregamos "Autoridade e Confiança Estruturada".
+> **Importante:** Orbit AI (organico) e Meta Ads (pago) sao produtos complementares mas independentes. Um NAO influencia o outro.
 
 ---
 
-## 🚀 A Revolução AIO: Por Que Vencemos (O Pitch)
+## Pipeline
 
-### 1. ⚡ Infraestrutura Agêntica (Swarm Intelligence)
-Não usamos uma IA genérica. Utilizamos uma **Colmeia de Agentes Especializados**:
-*   **Writer Agent:** Cria o conteúdo base com densidade semântica.
-*   **Auditor Agent:** Verifica alucinações jurídicas.
-*   **Uniqueness Guard (O Guardião):** Analisa a similaridade semântica de cada novo post contra todo o banco de dados existente.
-    *   **Regra de Ouro:** Se a similaridade for **>30%**, o agente rejeita o draft e ordena uma reescrita completa com nova abordagem criativa.
-    *   **Resultado:** Conteúdo 100% original, blindado contra penalizações de "Conteúdo Duplicado" do Google.
-
-### 2. 🛡️ Google Webmaster Compliance Strict
-O "Modo SEO Audit" do sistema não "acha" que está bom. Ele segue estritamente a documentação oficial para desenvolvedores do Google.
-*   **Core Web Vitals Ready:** Estrutura HTML limpa para LCP e CLS perfeitos.
-*   **Semantic HTML5:** Uso rigoroso de `<article>`, `<aside>`, `<figure>` conforme especificação W3C/Google.
-*   **Schema Markup (JSON-LD):** Metadados estruturados que dizem ao Google exatamente o que é o conteúdo, garantindo Rich Snippets.
-
-```mermaid
-graph LR
-    subgraph VELHO_JEITO [SEO Antigo]
-    A[Publicar Conteúdo] --> B[Esperar o Crawler]
-    B --> C{Indexou? Talvez...}
-    C -- Nao --> D[Conteúdo Fantasma]
-    end
-
-    subgraph JEITO_D4U [Protocolo D4U AIO]
-    E[Publicar Conteúdo] -->|API Push| F[Bing/Google IndexNow]
-    F -->|Sinal Instantâneo| G((Indexado & Rankeado))
-    end
-
-    style JEITO_D4U fill:#e6ffe6,stroke:#00b300,stroke-width:2px
-    style G fill:#00b300,color:#fff
+```
+1. TOPICOS        -> orbit_topic_creator.py       (gera temas via Gemini)
+2. CONTEUDO       -> orbit_content_engine.py       (gera artigos HTML completos)
+3. OTIMIZACAO     -> orbit_optimizer_v2.py         (remove JSON-LD, pontua AIO 1-10)
+4. VALIDACAO QA   -> orbit_qa_validator.py         (score 0-100 por artigo)
+5. DEPLOY         -> CSV -> WordPress All-Import   (manual)
+6. INDEXACAO      -> bing_index_now.py             (push IndexNow no Bing)
 ```
 
-### 3. 🎯 Leads de Alta Qualidade (O Usuário "Educado")
-O SEO tradicional atrai usuários "curiosos" (Topo de Funil). O AIO atrai usuários **"decididos"** (Meio/Fundo de Funil).
-*   **Dominação de Respostas:** A IA responde perguntas complexas (ex: *"Como funciona o EB-2 NIW para médicos?"*) usando nosso conteúdo como fonte.
-*   **Viés de Autoridade:** Quando o Perplexity ou ChatGPT nos cita, o usuário chega já confiando na marca.
+## Arquivos
 
----
+| Arquivo | Funcao |
+|---|---|
+| `orbit_content_engine.py` | Gerador principal — Gemini API -> artigos HTML em lotes |
+| `orbit_optimizer.py` | Lib de otimizacao (importada pelo v2 e parallel) |
+| `orbit_optimizer_v2.py` | Auditor — remove JSON-LD, converte FAQ p/ HTML puro, score AIO |
+| `orbit_optimizer_parallel.py` | Otimizacao paralela de multiplos lotes |
+| `orbit_qa_validator.py` | Validador QA — score 0-100, flags problemas |
+| `orbit_topic_creator.py` | Brainstorm de temas via IA |
+| `bing_index_now.py` | Forca indexacao via Bing IndexNow API |
+| `check_models.py` | Lista modelos Gemini disponiveis |
+| `regras_geracao/schema_orbit_ai_v1.json` | Schema de regras — cerebro do sistema |
 
-## 💎 Pilares de Valor (The "Why")
+## Como usar
 
-### 🛡️ E-E-A-T Blindado (Experience, Expertise, Authoritativeness, Trust)
-Nossa arquitetura injeta credibilidade em nível de código.
-*   **Trustworthiness (Confiança):** Compliance jurídico automatizado por IA. Se houver risco ou promessa de visto indevida, o sistema **reescreve** automaticamente.
-*   **Expertise (Especialidade):** Conteúdo técnico profundo sobre EB-2 NIW e Vistos de Investidor. Zero alucinações.
-*   **Human-in-the-Loop Virtual:** O sistema simula um advogado sênior revisando cada parágrafo antes da aprovação final.
-
-### 🌐 Polyglot Core (Multi-Idioma Nativo)
-Um único codebase, alcance global. O sistema alterna dinamicamente entre contextos culturais e linguísticos (EN/ES/PT), realizando **Transcreation** (adaptação cultural), não apenas tradução.
-
----
-
-## ⚙️ Arquitetura da Solução: O Pipeline
-
-O sistema opera como uma **Refinaria de Dados de Alta Performance**.
-
-```mermaid
-graph TD
-    subgraph INPUT
-    A[Raw CSV Strategy] 
-    end
-
-    subgraph CORE_ENGINE ["🔥 AGENT SWARM"]
-    B(Writer Agent) -->|Draft| C{Uniqueness Guard}
-    C -- "Similarity >30%" --> B
-    C -- "Original" --> D[Compliance Agent]
-    end
-
-    subgraph OPTIMIZER_LAYER ["💎 OPTIMIZER LAYER (Google compliance)"]
-    D -->|Audit| E(D4U Optimizer v2)
-    E -->|Check Webmaster Guidelines| F{Valid?}
-    F -- No --> G[Fix HTML/Schema]
-    G --> E
-    F -- Yes --> H[High-Ranked Content]
-    end
-
-    subgraph DEPLOY
-    H -->|Load| I[WP All Import CSV]
-    I -->|Publish| J((WordPress))
-    J -->|FORCE PUSH| K[Bing IndexNow API]
-    end
-    
-    style B fill:#101820,stroke:#D4AF37,stroke-width:2px,color:#fff
-    style C fill:#FF0000,stroke:#333,stroke-width:2px,color:#fff
-    style E fill:#D4AF37,stroke:#333,stroke-width:2px,color:#000
-    style J fill:#21759b,stroke:#fff,stroke-width:2px,color:#fff
-    style K fill:#ff0000,stroke:#fff,stroke-width:2px,color:#fff
-```
-
-### COMPONENTES DO ARSENAL
-
-| Arquivo | Função | Status |
-| :--- | :--- | :--- |
-| `d4u_content_engine.py` | **O Criador.** Gera o conteúdo base usando prompts de Cadeia de Densidade. | ✅ Stable |
-| `d4u_optimizer_v2.py` | **O Lapidador.** Audita o conteúdo, remove bugs, converte FAQ para HTML e garante Nota 10 em SEO. | ✅ Stable |
-| `bing_index_now.py` | **O Canhão (Force Push).** Notifica a Microsoft instantaneamente via API IndexNow a cada nova URL. | ✅ **NEW** |
-| `d4u_qa_validator.py` | **O Auditor.** Garante que nada saia fora de compliance. | ✅ Stable |
-| `d4u_topic_creator.py` | **O Estrategista.** Gera pautas infinitas baseadas em tendências. | ✅ Stable |
-
----
-
-## 🚀 Protocolo de Execução (Command Line Operations)
-
-A ferramenta foi desenhada para operação cirúrgica via terminal.
-
-### 1. Setup do Ambiente
+### 1. Gerar temas
 ```bash
-git clone https://github.com/caiorcastro/D4U-ES.git
-cd D4U-ES
-pip install -r requirements.txt
+python orbit_topic_creator.py --api_key "SUA_CHAVE_GEMINI" --count 10
 ```
 
-### 2. Fase de Geração (The Heavy Lifting)
-Gera os artigos brutos (drafts).
+### 2. Gerar artigos
 ```bash
-python3 d4u_content_engine.py --api_key "SUA_KEY" --model "gemini-1.5-pro" --start_batch 1
+python orbit_content_engine.py --api_key "SUA_CHAVE_GEMINI" --model "gemini-2.5-flash" --start_batch 1
 ```
 
-### 3. Fase de Otimização (The Polish) 💎 **CRITICAL STEP**
-Aqui a mágica acontece. O script varre os CSVs gerados, corrige falhas de HTML, remove scripts perigosos e eleva o "AIO Score".
+### 3. Otimizar
 ```bash
-python3 d4u_optimizer_v2.py --api_key "SUA_KEY"
+python orbit_optimizer_v2.py --api_key "SUA_CHAVE_GEMINI" --model "gemini-2.5-flash"
 ```
 
-### 4. Indexação Instantânea (Bing Force Push) ⚡ **NEW**
-Não espere pelo robô. Force a indexação.
+### 4. Validar qualidade
 ```bash
-python3 bing_index_now.py --api_key "SUA_INDEXNOW_KEY" --host "https://d4uimmigration.com" --urls_file "lista_urls.txt"
+python orbit_qa_validator.py --path "output_csv_batches_v2/*.csv"
 ```
 
-### 5. Validação Final
-Validação final de conformidade.
+### 5. Indexar no Bing
 ```bash
-python3 d4u_qa_validator.py
+python bing_index_now.py --api_key "SUA_CHAVE_INDEXNOW" --host "https://www.sowads.com.br" --urls_file urls.txt
 ```
+
+## Configuracao
+
+- **API Key Gemini:** Passe via `--api_key` ou defina `GEMINI_API_KEY` como variavel de ambiente
+- **Schema:** Edite `regras_geracao/schema_orbit_ai_v1.json` para ajustar regras, verticais e brand guidelines
+
+## Tech Stack
+
+- Python 3.x
+- Google Gemini API
+- Pandas
+- Bing IndexNow API
 
 ---
 
-## 🛡️ Defesa e Segurança
-*   **Chaves API:** Nunca hardcoded.
-*   **Git History:** Limpo e auditado.
-
----
-
-> *"A melhor maneira de prever o futuro é construí-lo com código."*
->
-> **D4U Immigration Technology Team**
+Sowads Technology Team | sowads.com.br

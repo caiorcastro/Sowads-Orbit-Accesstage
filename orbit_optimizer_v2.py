@@ -2,7 +2,7 @@ import argparse
 import glob
 import pandas as pd
 import google.generativeai as genai
-from d4u_optimizer import optimize_content_with_gemini, Colors
+from orbit_optimizer import optimize_content_with_gemini, Colors
 import os
 import csv
 import time
@@ -34,16 +34,6 @@ def main():
         for index, row in df.iterrows():
             title = row.get('post_title', 'Unknown')
             content = str(row.get('post_content', ''))
-            
-            # Smart Check: Only optimize if issues detected (JSON-LD or No FAQ detected)
-            # But for V2, we might want to run it on all to ensure high score, 
-            # or trust the generator?
-            # The generator V2 (d4u_content_engine) *should* be generating good code, 
-            # but the prompt still asks for JSON-LD in "Format Rule 5".
-            # WAIT! The prompt in d4u_content_engine.py STILL says:
-            # "5. Include a FAQ section with valid JSON-LD schema script at the end."
-            # So the generator IS generating JSON-LD!
-            # WE MUST RUN THE OPTIMIZER to remove it and convert to HTML FAQ.
             
             print(f" -> Auditing: {title[:40]}...")
             result = optimize_content_with_gemini(model, content, title)

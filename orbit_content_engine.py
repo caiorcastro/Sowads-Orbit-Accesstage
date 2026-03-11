@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 
 # --- Configuration ---
 CSV_INPUT_PATH = "relatorios/sugestao_temas_20260122_1804.csv"
-RULES_PATH = "regras_geracao/schema_conteudo_latam_v9.json"
+RULES_PATH = "regras_geracao/schema_orbit_ai_v1.json"
 OUTPUT_DIR = "output_csv_batches_v2"
 BATCH_SIZE = 20
 
@@ -94,14 +94,14 @@ def parse_response(response_text):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="D4U Content Engine (CSV Batch Mode)")
+    parser = argparse.ArgumentParser(description="Orbit AI Content Engine (CSV Batch Mode)")
     parser.add_argument("--api_key", help="Google Gemini API Key", required=True)
     parser.add_argument("--model", help="Specific Gemini Model Name", required=True)
     parser.add_argument("--start_batch", type=int, default=1, help="Start processing from this batch number")
     parser.add_argument("--max_batches", type=int, default=None, help="Maximum number of batches to process")
     args = parser.parse_args()
 
-    print(f"{Colors.HEADER}=== D4U CONTENT ENGINE V2 (CSV BATCH MODE) ==={Colors.ENDC}")
+    print(f"{Colors.HEADER}=== ORBIT AI CONTENT ENGINE V2 (CSV BATCH MODE) ==={Colors.ENDC}")
     
     # 1. Setup
     if not os.path.exists(OUTPUT_DIR):

@@ -48,7 +48,7 @@ def submit_urls_to_bing(api_key, host_url, url_list):
 def main():
     parser = argparse.ArgumentParser(description="Bing IndexNow Force Pusher")
     parser.add_argument("--api_key", required=True, help="Your IndexNow API Key")
-    parser.add_argument("--host", required=True, help="Your domain, e.g., https://www.d4uimmigration.com")
+    parser.add_argument("--host", required=True, help="Your domain, e.g., https://www.sowads.com.br")
     parser.add_argument("--urls_file", help="Text file with list of URLs to submit")
     parser.add_argument("--single_url", help="Submit a single URL")
     

@@ -2,7 +2,7 @@ import argparse
 import glob
 import pandas as pd
 import google.generativeai as genai
-from d4u_optimizer import optimize_content_with_gemini, Colors
+from orbit_optimizer import optimize_content_with_gemini, Colors
 import os
 import csv
 import time

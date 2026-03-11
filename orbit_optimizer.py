@@ -56,7 +56,7 @@ def optimize_content_with_gemini(model, content, title):
         return None
 
 def main():
-    parser = argparse.ArgumentParser(description="D4U Content Optimizer")
+    parser = argparse.ArgumentParser(description="Orbit AI Content Optimizer")
     parser.add_argument("--api_key", required=True)
     parser.add_argument("--model", default="gemini-2.5-flash")
     args = parser.parse_args()
