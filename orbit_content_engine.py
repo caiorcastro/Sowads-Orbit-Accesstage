@@ -149,6 +149,9 @@ def parse_response(response_text):
     if match_html:
         post_content = match_html.group(1)
 
+    # Strip <h1> — WordPress renders the post title as H1 automatically
+    post_content = re.sub(r'<h1[^>]*>.*?</h1>\s*', '', post_content, flags=re.DOTALL)
+
     # Strip any <img> tags (Gemini sometimes adds placeholder images)
     post_content = re.sub(r'<figure[^>]*>\s*<img[^>]*/?>[\s\S]*?</figure>', '', post_content)
     post_content = re.sub(r'<p[^>]*>\s*<img[^>]*/?>[\s\S]*?</p>', '', post_content)
