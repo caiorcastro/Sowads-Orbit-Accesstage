@@ -14,7 +14,7 @@ class OrbitValidator:
             "has_html_article": r'<article lang="pt-BR">',
             "has_h1": r'<h1>',
             "no_links": r'<a href=',
-            "has_faq_section": r'<section class=["\']faq-section["\']>',
+            "has_faq_section": r'<section[^>]+class=["\']faq-section["\']',
             "has_json_ld_faq": r'<script type="application/ld\+json">[\s\S]*?"@type"\s*:\s*"FAQPage"',
             "has_table": r'<table[\s>]',
             "has_lists": r'<[uo]l[\s>]',
@@ -77,20 +77,14 @@ class OrbitValidator:
             score -= 15
             issues.append("[WARN] Hyperlinks detectados (deve ser texto simples).")
 
-        # 3. H1
-        if not re.search(self.rules["has_h1"], content):
-            score -= 10
-            issues.append("[WARN] Tag <h1> ausente.")
+        # 3. H1 — não verificado: WordPress renderiza o título do post como H1 automaticamente
 
         # 4. FAQ HTML section
         if not re.search(self.rules["has_faq_section"], content):
             score -= 10
             issues.append("[WARN] Seção FAQ HTML ausente (<section class='faq-section'>).")
 
-        # 5. JSON-LD FAQPage (agora REQUERIDO)
-        if not re.search(self.rules["has_json_ld_faq"], content, re.DOTALL):
-            score -= 15
-            issues.append("[WARN] JSON-LD FAQPage schema ausente.")
+        # 5. JSON-LD — não verificado: removido do pipeline por decisão editorial
 
         # 6. Content length
         if len(content) < self.rules["min_length"]:
@@ -100,9 +94,18 @@ class OrbitValidator:
         # 7. Word count
         plain_text = self._extract_text(content)
         word_count = self._count_words(plain_text)
-        if word_count < 1200:
+        if word_count < 700:
+            score -= 15
+            issues.append(f"[WARN] Word count baixo ({word_count} palavras, mín. 700). Desenvolva mais os tópicos e expanda o FAQ.")
+        elif word_count > 2000:
+            score -= 25
+            issues.append(f"[REPROVADO] Word count excessivo ({word_count} palavras, máx. 2000). Converta parágrafos corridos em listas <ul><li>. Nunca corte o FAQ nem a conclusão. Nenhuma frase incompleta. MÁXIMO 2.000 palavras.")
+        elif word_count > 1800:
+            score -= 12
+            issues.append(f"[WARN] Word count alto ({word_count} palavras, alvo máx. 1800). Converta parágrafos em bullets onde possível.")
+        elif word_count > 1500:
             score -= 5
-            issues.append(f"[WARN] Word count baixo ({word_count} palavras, mín. 1200).")
+            issues.append(f"[WARN] Word count acima do ideal ({word_count} palavras, alvo máx. 1500).")
 
         # 8. Keyword density
         density, keywords = self._keyword_density(content)

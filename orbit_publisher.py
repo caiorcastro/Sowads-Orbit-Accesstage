@@ -219,6 +219,39 @@ def cleanup_unused_categories(wp_url, wp_user, wp_pass, categories_map, dry_run=
     return deleted
 
 
+def get_media_id_by_url(wp_url, wp_user, wp_pass, img_url):
+    """Look up WordPress media attachment ID from a URL using REST API."""
+    if not img_url or not img_url.startswith("http"):
+        return None
+    try:
+        filename = img_url.split("/")[-1].rsplit(".", 1)[0]  # slug without extension
+        api_url = f"{wp_url}/wp-json/wp/v2/media"
+        resp = requests.get(
+            api_url,
+            params={"search": filename, "per_page": 10, "_fields": "id,source_url"},
+            auth=(wp_user, wp_pass),
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            return None
+        for item in resp.json():
+            if item.get("source_url", "").split("?")[0] == img_url.split("?")[0]:
+                return item["id"]
+    except Exception:
+        pass
+    return None
+
+
+def set_featured_image(wp_url, wp_user, wp_pass, post_id, media_id):
+    """Set the featured image (post thumbnail) of a WordPress post via XML-RPC."""
+    try:
+        server = get_xmlrpc_client(wp_url)
+        server.wp.editPost(1, wp_user, wp_pass, post_id, {"post_thumbnail": str(media_id)})
+        return True
+    except Exception:
+        return False
+
+
 def list_draft_articles(input_dir):
     """List all draft articles from CSV files."""
     csv_files = sorted(glob.glob(f"{input_dir}/*.csv"))
@@ -242,7 +275,8 @@ def list_draft_articles(input_dir):
                             'qa_score': row.get('qa_score', 'N/A'),
                             'date': str(row.get('post_date', '')),
                             'original_theme': str(row.get('original_theme', '')),
-                            'suggested_category': str(row.get('suggested_category', ''))
+                            'suggested_category': str(row.get('suggested_category', '')),
+                            'img_blog': str(row.get('img_blog', '')).strip(),
                         })
         except Exception as e:
             print(f"{Colors.WARNING}Erro lendo {file_path}: {e}{Colors.ENDC}")
@@ -251,19 +285,7 @@ def list_draft_articles(input_dir):
 
 
 def publish_to_wordpress(wp_url, wp_user, wp_pass, article, publish_status='draft', categories=None):
-    """Publish article to WordPress via XML-RPC.
-
-    Args:
-        wp_url: WordPress site URL
-        wp_user: WordPress username
-        wp_pass: WordPress password
-        article: Dict with title, content, meta_title, meta_desc
-        publish_status: 'draft' or 'publish'
-        categories: List of category IDs
-
-    Returns:
-        dict: {success, post_id, link, status, error}
-    """
+    """Publish article to WordPress via XML-RPC, with featured image if img_blog is set."""
     server = get_xmlrpc_client(wp_url)
 
     title = article['meta_title'] if article.get('meta_title') else article['title']
@@ -276,11 +298,9 @@ def publish_to_wordpress(wp_url, wp_user, wp_pass, article, publish_status='draf
         'post_content': content,
     }
 
-    # Add categories
     if categories:
         post_data['terms'] = {'category': categories}
 
-    # Add custom fields for SEO plugins (Yoast/RankMath)
     custom_fields = []
     if article.get('meta_title'):
         custom_fields.append({'key': '_yoast_wpseo_title', 'value': article['meta_title']})
@@ -293,16 +313,23 @@ def publish_to_wordpress(wp_url, wp_user, wp_pass, article, publish_status='draf
 
     try:
         post_id = server.wp.newPost(1, wp_user, wp_pass, post_data)
-
-        # Get the post link
         post_info = server.wp.getPost(1, wp_user, wp_pass, int(post_id), ['link', 'post_status'])
         link = post_info.get('link', '')
+
+        # Set featured image
+        img_url = article.get('img_blog', '')
+        featured_set = False
+        if img_url and img_url.startswith('http'):
+            media_id = get_media_id_by_url(wp_url, wp_user, wp_pass, img_url)
+            if media_id:
+                featured_set = set_featured_image(wp_url, wp_user, wp_pass, int(post_id), media_id)
 
         return {
             'success': True,
             'post_id': int(post_id),
             'link': link,
-            'status': post_info.get('post_status', publish_status)
+            'status': post_info.get('post_status', publish_status),
+            'featured_image': 'ok' if featured_set else ('sem_url' if not img_url else 'nao_encontrada'),
         }
     except Exception as e:
         return {
@@ -371,6 +398,7 @@ def main():
     parser.add_argument("--no_category", action='store_true', help="Skip automatic category assignment")
     parser.add_argument("--cleanup_categories", action='store_true', help="Delete unused categories (0 posts)")
     parser.add_argument("--dry_run", action='store_true', help="Show what would be done without making changes")
+    parser.add_argument("--test_one", action='store_true', help="Publica apenas o primeiro artigo para validacao manual")
     args = parser.parse_args()
 
     # Get credentials from args or env vars
@@ -450,7 +478,12 @@ def main():
         return
 
     # Selection
-    if not args.all:
+    if args.test_one:
+        selected = [0]
+        print(f"\n{Colors.WARNING}[TEST_ONE] Publicando apenas o primeiro artigo para validacao.{Colors.ENDC}")
+    elif args.all:
+        selected = list(range(len(drafts)))
+    else:
         print(f"\n{Colors.BOLD}Quais artigos publicar? (ex: 1,3,5 ou 'all' para todos){Colors.ENDC}")
         selection = input("> ").strip()
         if selection.lower() == 'all':
@@ -461,8 +494,6 @@ def main():
             except ValueError:
                 print(f"{Colors.FAIL}Selecao invalida.{Colors.ENDC}")
                 return
-    else:
-        selected = list(range(len(drafts)))
 
     # Publish
     publish_status = 'publish' if args.publish else 'draft'
@@ -495,7 +526,9 @@ def main():
         result['category_name'] = cat_name
 
         if result['success']:
-            print(f"{Colors.OKGREEN}OK (ID: {result['post_id']}){Colors.ENDC}")
+            img_status = result.get('featured_image', '?')
+            img_icon = '🖼️' if img_status == 'ok' else '⚠️ sem imagem'
+            print(f"{Colors.OKGREEN}OK (ID: {result['post_id']}) {img_icon}{Colors.ENDC}")
             mark_as_published(article['file'], article['file_idx'], result['post_id'])
         else:
             print(f"{Colors.FAIL}ERRO: {result['error'][:60]}{Colors.ENDC}")
