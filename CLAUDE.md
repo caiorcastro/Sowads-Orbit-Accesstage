@@ -1,172 +1,183 @@
 # Sowads Orbit AI — CLAUDE.md
+# Leia este arquivo INTEIRO antes de qualquer ação no projeto.
 
 ## O que é este projeto
 
-Motor de conteúdo SEO/AIO para a Sowads Agência. Gera artigos HTML otimizados para WordPress em escala, com copies sociais e indexação automática. Produto interno chamado **Orbit AI**.
+Motor de conteúdo SEO/AIO para a Sowads Agência. Gera artigos HTML otimizados para WordPress em escala, copies sociais por rede e exporta eventos para o backend Sowads. Produto interno chamado **Orbit AI v3**.
 
-## Scripts e responsabilidades
+## Provedor de IA — REGRA FIXA
 
-| Script | Responsabilidade |
-|--------|-----------------|
-| `orbit_content_engine.py` | Motor principal: geração de artigos HTML (OpenRouter + briefings) |
-| `orbit_topic_creator.py` | Brainstorm de temas via Gemini |
-| `orbit_qa_validator.py` | Score de qualidade 0-100 |
-| `orbit_publisher.py` | Publicação no WordPress via XML-RPC |
-| `orbit_media_indexer.py` | Indexação e matching de imagens da biblioteca WP |
-| `orbit_monitor.py` | Monitor de progresso em tempo real (terminal) |
-| `orbit_social_agent.py` | Copies para LinkedIn, Instagram, Facebook |
-| `orbit_optimizer.py` / `_v2.py` / `_parallel.py` | Otimização AIO em lote |
-| `bing_index_now.py` | Indexação forçada no Bing |
-| `run_lotes.sh` | Pipeline: gera lotes → salva CSVs (NÃO publica automaticamente) |
+**Sempre OpenRouter.** Nunca usar Gemini direto, nem qualquer outra API.
 
-## Provedor de IA
-
-**OpenRouter** (`https://openrouter.ai/api/v1/chat/completions`) — compatível com API OpenAI.
-
-- Modelo primário: `google/gemini-2.5-flash`
-- Modelo fallback: `--fallback_model` (ex: `moonshotai/kimi-k2.6`)
-- Chave: `OPENROUTER_API_KEY` no `.env` ou `--openrouter_key` na CLI
-- Headers obrigatórios: `HTTP-Referer: https://sowads.com.br`, `X-Title: Sowads Orbit AI Content Engine`
-
-## Sistema de Briefings
-
-Pasta `briefings/` contém arquivos `.md` com dados atualizados além do corte da IA.
-
-**Formato obrigatório:**
 ```
-# Palavras-chave para detecção: palavra1, palavra2, palavra3
-
-[conteúdo de pesquisa aqui]
+Endpoint : https://openrouter.ai/api/v1/chat/completions
+Modelo   : google/gemini-2.5-flash
+Fallback : --fallback_model moonshotai/kimi-k2.6
+Chave    : OPENROUTER_API_KEY no .env
+Headers  : HTTP-Referer: https://sowads.com.br
+           X-Title: Sowads Orbit AI Content Engine
 ```
 
-**Como funciona:** O engine detecta palavras do tema no arquivo `.md`, injeta os primeiros 800 palavras no prompt automaticamente. Nenhuma mudança de código necessária para adicionar novos briefings.
+## Scripts — o que cada um faz
 
-**Para novas verticais:** basta criar `briefings/<vertical>.md` com a linha de keywords — zero código.
-
-**Briefings existentes:**
-- `briefings/turismo.md` — SGE/AI Overviews no travel, CVC, OTAs, zero-click 2026
-- `briefings/auto.md` — EVs no Brasil, montadoras chinesas, SGE automotivo, schema markup
-
-## Sistema de Imagens (orbit_media_indexer.py)
-
-Reutiliza imagens **já existentes** na biblioteca do WordPress — sem geração, sem upload.
-
-**Scoring de matching:**
-- Similaridade Jaccard entre palavras do tema e palavras no nome do arquivo de imagem (peso 80%)
-- Completude do grupo (tem blog + linkedin + instagram + facebook?) (peso 20%)
-- Penalidade por repetição: `use_count=0→1.0`, `1→0.5`, `2→0.25`, `3+→0.10`
-
-**Persistência:** `relatorios/media_index.json` — guarda `use_count` e `assigned_to` entre runs.
-
-**Colunas CSV de saída:** `img_blog`, `img_linkedin`, `img_instagram`, `img_facebook`, `img_tiktok`
-
-**Padrão de nomes dos arquivos WP:** `{Prefix}_{N}_{type}_{topic-slug}_{hash}.jpg`
-Tipos: `wp`=blog, `li`=linkedin, `ig`=instagram, `fb`=facebook, `tt`=tiktok
-
-## Pipeline de publicação — OBRIGATÓRIO SEGUIR
-
-**O `run_lotes.sh` NÃO publica mais automaticamente.** Publicação automática foi removida por causar problemas de indexação.
-
-**Fluxo correto sempre:**
-```bash
-# 1. Gerar artigos
-./run_lotes.sh
-
-# 2. Validar 1 artigo antes de publicar o lote
-python3 orbit_publisher.py \
-  --wp_url "https://sowads.com.br" \
-  --wp_user "caio" \
-  --wp_pass "..." \
-  --input_dir "output_csv_batches_v2" \
-  --test_one
-
-# 3. Verificar no WordPress se o artigo tem imagem destacada e conteúdo OK
-# 4. Só então publicar o lote completo
-python3 orbit_publisher.py ... --all
-```
-
-**O publisher seta a imagem destacada automaticamente** via `get_media_id_by_url` + `set_post_thumbnail` XML-RPC. O print mostra `🖼️` se setou ou `⚠️ sem imagem` se falhou.
-
-## Configuração central
-
-`regras_geracao/schema_orbit_ai_v1.json` — brand, compliance, regras SEO/AIO, formato de output.
-
-## Invariantes que NUNCA devem ser quebrados
-
-1. **Compliance de produto:** Orbit AI (SEO/AIO) e Meta Ads são independentes. Nenhum artigo pode sugerir causalidade entre os dois. Para temas de Mídia Paga: tratar canais como paralelos e independentes — anúncios NÃO melhoram ranqueamento orgânico.
-2. **Zero hyperlinks** no conteúdo dos artigos. CTA apenas em negrito.
-3. **Estrutura HTML obrigatória:** `<article lang="pt-BR">`, H1 ausente no conteúdo (WordPress renderiza o título como H1), H2/H3 hierárquicos, FAQ em HTML puro com `<section class="faq-section">`.
-4. **Zero JSON-LD / `<script>`** no conteúdo — removido do prompt e stripped via código no `parse_response`.
-5. **Score QA mínimo:** 80/100. Self-healing automático (até 2 tentativas).
-6. **PT-BR naturalizado:** termos técnicos em inglês devem ser traduzidos naturalmente.
-7. **Word count:** alvo 700–1.400 palavras no prompt (o modelo tende a overshoot ~1.500–1.900). QA penaliza progressivamente: >1.500 → -5, >1.800 → -12, >2.000 → -25 (falha).
-8. **Bullets obrigatórios:** listas de etapas, benefícios ou exemplos devem usar `<ul><li>` — reduz word count sem cortar raciocínio.
-9. **Publicação manual:** nunca automatizar publicação em `run_lotes.sh`. Sempre `--test_one` primeiro.
-
-## CLI — exemplos de uso
-
-```bash
-# Gerar lote com chave via .env
-python orbit_content_engine.py \
-  --model "google/gemini-2.5-flash" \
-  --wp_url "https://sowads.com.br" \
-  --wp_user "caio" \
-  --wp_pass "..." \
-  --csv_input "output_csv_batches_v2/lote_auto_temas.csv"
-
-# Com fallback model
-python orbit_content_engine.py \
-  --model "google/gemini-2.5-flash" \
-  --fallback_model "moonshotai/kimi-k2.6" \
-  --csv_input "output_csv_batches_v2/lote_1.csv"
-
-# Publicar 1 artigo para validação
-python3 orbit_publisher.py --wp_url ... --wp_user ... --wp_pass ... \
-  --input_dir output_csv_batches_v2 --test_one
-
-# Publicar lote completo (só após validar --test_one)
-python3 orbit_publisher.py --wp_url ... --wp_user ... --wp_pass ... \
-  --input_dir output_csv_batches_v2 --all
-
-# Monitor em tempo real
-python3 orbit_monitor.py --log relatorios/run_pipeline.log
-```
+| Script | Input | Output | Observações |
+|--------|-------|--------|-------------|
+| `run_lotes.sh` | — | CSVs em `output_csv_batches_v2/` | NÃO publica — só gera |
+| `orbit_content_engine.py` | CSV de temas | CSV de artigos com métricas | Motor principal |
+| `orbit_qa_validator.py` | HTML | score 0-100 + issues | Usado internamente pelo engine |
+| `orbit_media_indexer.py` | — | `relatorios/media_index.json` | Indexa biblioteca WP |
+| `orbit_monitor.py` | log file | terminal em tempo real | ETA, scores, imagens |
+| `orbit_publisher.py` | CSV de artigos | posts no WP | Sempre `--test_one` antes de `--all` |
+| `orbit_social_agent.py` | CSVs de artigos | TXTs por rede + events CSV | Usa OpenRouter; aceita draft e published |
+| `orbit_topic_creator.py` | tema livre | CSV de temas | Brainstorm de pautas |
+| `orbit_optimizer.py/_v2/_parallel` | CSV | CSV otimizado | AIO em lote |
+| `bing_index_now.py` | URLs | push IndexNow | Indexação forçada Bing |
+| `check_models*.py` / `get_models_list.py` | — | lista | Utilitários — listar modelos |
 
 ## Diretórios de saída
 
 ```
-output_csv_batches_v2/     ← artigos gerados com métricas e URLs de imagem
-output_social_copies/      ← copies por rede social
-relatorios/                ← CSVs de temas + relatórios Markdown + media_index.json
-briefings/                 ← dados de pesquisa por vertical/tema
+output_csv_batches_v2/     ← artigos gerados (1 CSV por lote)
+output_social_copies/      ← TXTs de copies por rede (linkedin/, instagram/, facebook/)
+output_sowads_events/      ← CSVs de eventos para o backend Sowads (1 por run do social agent)
+relatorios/                ← relatórios Markdown + media_index.json
+briefings/                 ← pesquisas por vertical (injetadas no prompt automaticamente)
+regras_geracao/            ← schema_orbit_ai_v1.json (regras de brand e compliance)
 ```
 
-## Credenciais (.env)
+## .env — variáveis necessárias
 
-```
+```env
 OPENROUTER_API_KEY=sk-or-v1-...
 WORDPRESS_URL=https://sowads.com.br
-WORDPRESS_USER=
-WORDPRESS_PASSWORD=   # app password, não a senha real
+WORDPRESS_USER=caio
+WORDPRESS_PASSWORD=...          # app password do WP, não a senha real
 BING_INDEXNOW_KEY=
+
+# Backend Sowads / Social
+SOWADS_ORG_ID=0-DUMMY-0
+IG_ACCOUNT_ID=DUMMY-IG-00000000000
+FB_PAGE_ID=DUMMY-FB-00000000000
+LI_ACCOUNT_ID=DUMMY-LI-00000000000
+TT_ACCOUNT_ID=DUMMY-TT-00000000000
 ```
 
-## Adicionando novas verticais
+## Pipeline completo — passo a passo
 
-1. Crie `briefings/<vertical>.md` com linha `# Palavras-chave para detecção: kw1, kw2, kw3`
-2. Crie CSV em `output_csv_batches_v2/lote_<vertical>_temas.csv` com colunas `topic_pt,vertical,category`
-3. Adicione lote no `run_lotes.sh` seguindo o padrão dos lotes existentes
-4. Zero mudança de código necessária
+```bash
+# 1. GERAR artigos (nunca publica automaticamente)
+./run_lotes.sh
 
-**Verticais já implementadas:** turismo, automotivo
+# 2. GERAR copies sociais + events CSV para o backend
+python3 orbit_social_agent.py --count 40
+# → salva TXTs em output_social_copies/{rede}/
+# → salva orbitai_events_{org}_{ts}.csv em output_sowads_events/
 
-**Próximas sugeridas (prospects Sowads):** saúde/clínicas, imóveis/construtoras, educação/cursos, financeiro/fintechs, varejo/e-commerce, advocacia/jurídico, franquias, agro
+# 3. VALIDAR 1 artigo antes de publicar
+python3 orbit_publisher.py \
+  --wp_url https://sowads.com.br --wp_user caio --wp_pass "..." \
+  --input_dir output_csv_batches_v2 --test_one
+# Verificar no WP: imagem destacada presente? Conteúdo OK? Sem código no final?
 
-## Diretrizes para evolução do código
+# 4. PUBLICAR lote completo (só após validar --test_one)
+python3 orbit_publisher.py ... --all
 
-- Não remover self-healing, scoring QA ou elementos visuais (tabelas, listas, FAQ)
-- Novos briefings: criar `.md` em `briefings/` com a linha de keywords — sem mexer no código
-- Novas etapas do pipeline: input CSV → processamento → output CSV + relatório Markdown
-- Logs e relatórios são obrigatórios em toda etapa nova
-- Controle de custo: modelo menor para self-healing se necessário; modelo maior apenas sob demanda via `--fallback_model`
-- Publicação SEMPRE manual com `--test_one` primeiro — nunca automatizar
+# 5. INDEXAR no Bing (opcional, após publicação)
+python3 bing_index_now.py
+```
+
+## Sistema de Briefings
+
+Pasta `briefings/` — arquivos `.md` com dados reais além do corte da IA.
+
+**Formato obrigatório da primeira linha:**
+```
+# Palavras-chave para detecção: palavra1, palavra2, palavra3
+```
+
+O engine detecta por keyword do tema e injeta os primeiros 800 chars no prompt. **Zero código** para nova vertical — só criar o arquivo `.md`.
+
+**Briefings existentes:** `turismo.md`, `auto.md`
+
+## Sistema de Imagens
+
+Reutiliza imagens **já existentes** na biblioteca WP — nunca gera, nunca sobe nova.
+
+- Match: Jaccard (palavras do tema vs. nome do arquivo), peso 80%
+- Completude do grupo (blog + linkedin + ig + fb?), peso 20%
+- Penalidade por repetição: `use_count 0→1.0 | 1→0.5 | 2→0.25 | 3+→0.10`
+- Índice em: `relatorios/media_index.json`
+
+## Events CSV — formato do backend Sowads
+
+O `orbit_social_agent.py` gera automaticamente após cada run:
+
+```
+output_sowads_events/orbitai_events_{SOWADS_ORG_ID}_{unix_ts}.csv
+```
+
+Colunas: `org_id, source_event_id, event_source, event_type, event_version, event_request_timestamp, payload, status`
+
+- 1 artigo = 4 linhas (ig, fb, li, tt)
+- `status: pending` sempre
+- `payload`: JSON com rede, account_id, primary_text (hook+copy+cta+hashtags), link WP, media URL `[BIBLIOTECA]filename.jpg`
+
+## Mapeamento de categorias CSV → WordPress
+
+```python
+CATEGORY_CSV_TO_WP = {
+    "SEO & AIO":               "SEO e AI-SEO",
+    "Conteúdo":                "Conteúdo em Escala",
+    "Estratégia e Performance": "Estratégia e Performance",
+    "Mídia Paga":              "Mídia Paga",
+    "Data e Analytics":        "Dados e Analytics",
+}
+```
+
+A categoria vem do CSV de temas (`category` column) e é preservada até o WP. Nunca usar detecção por keyword.
+
+## QA Scoring — thresholds atuais
+
+| Condição | Penalidade |
+|----------|-----------|
+| Word count < 700 | -15 |
+| Word count > 1.500 | -5 |
+| Word count > 1.800 | -12 |
+| Word count > 2.000 | -25 (falha → self-heal) |
+| FAQ ausente | -20 |
+| H1 no conteúdo | -10 (WP renderiza o título como H1) |
+| JSON-LD / `<script>` | stripped via código, não penaliza |
+
+## Invariantes que NUNCA devem ser quebrados
+
+1. **OpenRouter sempre** — nunca Gemini direto ou outra API sem aprovação
+2. **Compliance Orbit AI ↔ Meta Ads** — produtos independentes, zero causalidade
+3. **Zero hyperlinks, `<img>`, `<figure>` ou JSON-LD** no conteúdo dos artigos
+4. **FAQ HTML puro** com `<section class="faq-section">` + `<h2>` + `<h3>` + `<p>`
+5. **Sem H1 no conteúdo** — WordPress renderiza o título do post como H1
+6. **Score QA ≥ 80/100** com self-healing até 2x
+7. **Publicação SEMPRE manual** — `--test_one` → verificar WP → `--all`
+8. **Imagens sempre da biblioteca WP** — nunca gerar ou subir nova
+9. **Asteriscos `**texto**` removidos** via código em `parse_response()` — modelo não deve gerar markdown bold em HTML
+10. **CSVs nomeados com stem do arquivo de input** — nunca sobrescrever entre lotes
+
+## Adicionando nova vertical
+
+1. Pesquise o mercado e crie `briefings/<vertical>.md` com linha de keywords
+2. Crie CSV em `output_csv_batches_v2/lote_<vertical>_temas.csv` com colunas: `topic_pt, vertical, category`
+3. Adicione lote no `run_lotes.sh` seguindo o padrão existente
+4. Zero mudança de código
+
+**Verticais implementadas:** turismo, automotivo
+**Sugeridas (prospects Sowads):** saúde/clínicas, imóveis, educação, financeiro, varejo/e-commerce, jurídico, franquias, agro
+
+## Regras de comportamento para o assistente de IA
+
+- **Sempre ler os arquivos reais antes de agir** — nunca inventar estado
+- **Verificar com `git status`** antes de qualquer edição de pipeline
+- **Nunca sobrescrever CSVs existentes** sem confirmar com o usuário
+- **Antes de publicar lotes**: confirmar que `--test_one` foi rodado e validado
+- **Invariantes estruturais** (sem JSON-LD, sem H1, sem asteriscos) devem ser garantidos via código, não só via prompt
+- **Não automatizar publicação** mesmo que o usuário peça "publique tudo" — sempre `--test_one` primeiro com confirmação explícita
+- **Fixes de conteúdo em posts já publicados**: usar XML-RPC `wp.editPost` com regex, nunca regenerar
+- **Categorias**: sempre vêm do CSV de temas — nunca inferir por keyword
