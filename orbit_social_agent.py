@@ -6,17 +6,19 @@ import csv
 import argparse
 from datetime import datetime
 
+import uuid
 import pandas as pd
 import requests
-import google.generativeai as genai
 
 
 CSV_DIR = "output_csv_batches_v2"
 OUTPUT_DIR = "output_social_copies"
+EVENTS_DIR = "output_sowads_events"
 REPORTS_DIR = "relatorios"
 CTA_HISTORY_FILE = os.path.join(OUTPUT_DIR, "_cta_history.json")
 DEFAULT_WP_URL = "https://sowads.com.br"
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "google/gemini-2.5-flash"
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 ENV_FILE = ".env"
 
 NETWORKS = {
@@ -79,9 +81,9 @@ def load_env_file(path=ENV_FILE):
 
 def load_api_key(cli_key=None):
     load_env_file()
-    api_key = cli_key or os.environ.get("GEMINI_API_KEY")
+    api_key = cli_key or os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
-        raise ValueError("Forneca --api_key ou defina GEMINI_API_KEY.")
+        raise ValueError("Forneca --api_key ou defina OPENROUTER_API_KEY.")
     return api_key
 
 
@@ -154,7 +156,7 @@ def load_published_articles(csv_dir):
             status = str(row.get("post_status", "")).strip().lower()
             wp_post_id = normalize_wp_post_id(row.get("wp_post_id"))
             content = str(row.get("post_content", ""))
-            if status != "published":
+            if status not in ("published", "draft"):
                 continue
             if not wp_post_id:
                 continue
@@ -177,6 +179,11 @@ def load_published_articles(csv_dir):
                     "qa_score": str(row.get("qa_score", "")).strip(),
                     "published_at": published_at,
                     "sort_value": sort_value,
+                    "img_blog": str(row.get("img_blog", "")).strip(),
+                    "img_linkedin": str(row.get("img_linkedin", "")).strip(),
+                    "img_instagram": str(row.get("img_instagram", "")).strip(),
+                    "img_facebook": str(row.get("img_facebook", "")).strip(),
+                    "img_tiktok": str(row.get("img_tiktok", "")).strip(),
                 }
             )
 
@@ -317,16 +324,27 @@ FORMATO DE SAIDA: JSON puro com este schema:
 """
 
 
-def generate_social_payload(model, article, recent_ctas, max_retries=5):
+def generate_social_payload(api_key, article, recent_ctas, max_retries=5):
     import time
     prompt = build_prompt(article, recent_ctas)
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://sowads.com.br",
+        "X-Title": "Sowads Orbit AI Social Agent",
+    }
+    body = {
+        "model": MODEL_NAME,
+        "messages": [{"role": "user", "content": prompt}],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.8,
+    }
     for attempt in range(max_retries):
         try:
-            response = model.generate_content(
-                prompt,
-                generation_config={"response_mime_type": "application/json"},
-            )
-            payload = json.loads(response.text)
+            resp = requests.post(OPENROUTER_API_URL, headers=headers, json=body, timeout=60)
+            resp.raise_for_status()
+            text = resp.json()["choices"][0]["message"]["content"]
+            payload = json.loads(text)
             return payload
         except Exception as exc:
             msg = str(exc)
@@ -337,10 +355,6 @@ def generate_social_payload(model, article, recent_ctas, max_retries=5):
             else:
                 raise
     raise RuntimeError(f"Falhou apos {max_retries} tentativas por rate limit.")
-
-
-def validate_model_access(model):
-    model.generate_content("Responda apenas com OK.")
 
 
 def validate_payload(payload, recent_ctas):
@@ -431,6 +445,126 @@ def generate_report(results, timestamp):
     return path
 
 
+def extract_img_filename(url):
+    """Extrai apenas o nome do arquivo da URL da imagem WP."""
+    if not url or str(url).strip() in ("", "nan"):
+        return ""
+    return url.strip().split("/")[-1]
+
+
+def build_events_csv(articles_with_payloads, org_id, timestamp):
+    """
+    Gera o CSV de eventos no formato Sowads Backend:
+    org_id, source_event_id, event_source, event_type, event_version,
+    event_request_timestamp, payload, status
+    """
+    load_env_file()
+    ig_account_id = os.environ.get("IG_ACCOUNT_ID", "DUMMY-IG-00000000000")
+    fb_page_id    = os.environ.get("FB_PAGE_ID",    "DUMMY-FB-00000000000")
+    li_org_id     = os.environ.get("LI_ACCOUNT_ID", "DUMMY-LI-00000000000")
+    tt_adv_id     = os.environ.get("TT_ACCOUNT_ID", "DUMMY-TT-00000000000")
+
+    rows = []
+    ts_unix = int(datetime.now().timestamp())
+
+    for article, social_payload in articles_with_payloads:
+        uid = article["unique_import_id"]
+        post_url = article.get("url", f"https://sowads.com.br/?p={article['wp_post_id']}")
+
+        img_ig  = extract_img_filename(article.get("img_instagram", ""))
+        img_fb  = extract_img_filename(article.get("img_blog", ""))
+        img_li  = extract_img_filename(article.get("img_linkedin", ""))
+        img_tt  = extract_img_filename(article.get("img_tiktok", ""))
+
+        def make_text(net):
+            p = social_payload.get(net, {})
+            parts = [p.get("hook",""), p.get("copy",""), p.get("cta","")]
+            hashtags = p.get("hashtags", [])
+            if isinstance(hashtags, list):
+                parts.append(" ".join(hashtags))
+            else:
+                parts.append(str(hashtags))
+            return "\n\n".join(x.strip() for x in parts if x.strip())
+
+        # Instagram
+        ig_payload = {
+            "social_network": "meta", "channel": "instagram",
+            "account_id": ig_account_id,
+            "platform_spec": {"meta": {"page_id": fb_page_id, "instagram_actor_id": ig_account_id}},
+            "content": {
+                "format": "PHOTO",
+                "primary_text": make_text("instagram"),
+                "link": post_url,
+                "media": {"url": f"[BIBLIOTECA]{img_ig}", "type": "IMAGE"} if img_ig else None,
+            },
+        }
+        if not ig_payload["content"].get("media"):
+            ig_payload["content"].pop("media", None)
+
+        # Facebook
+        fb_payload = {
+            "social_network": "meta", "channel": "facebook",
+            "account_id": fb_page_id,
+            "platform_spec": {"meta": {"page_id": fb_page_id, "instagram_actor_id": ig_account_id}},
+            "content": {
+                "format": "PHOTO",
+                "primary_text": make_text("facebook"),
+                "link": post_url,
+                "media": {"url": f"[BIBLIOTECA]{img_fb}", "type": "IMAGE"} if img_fb else None,
+            },
+        }
+        if not fb_payload["content"].get("media"):
+            fb_payload["content"].pop("media", None)
+
+        # LinkedIn
+        li_payload = {
+            "social_network": "linkedin",
+            "account_id": li_org_id,
+            "platform_spec": {"linkedin": {"organization_id": li_org_id}},
+            "content": {
+                "format": "IMAGE",
+                "primary_text": make_text("linkedin"),
+                "link": post_url,
+                "media": {"url": f"[BIBLIOTECA]{img_li}", "type": "IMAGE"} if img_li else None,
+            },
+        }
+        if not li_payload["content"].get("media"):
+            li_payload["content"].pop("media", None)
+
+        # TikTok
+        tt_payload = {
+            "social_network": "tiktok",
+            "account_id": tt_adv_id,
+            "platform_spec": {"tiktok": {"advertiser_id": tt_adv_id}},
+            "content": {
+                "format": "IMAGE",
+                "primary_text": make_text("instagram"),
+                "media": {"url": f"[BIBLIOTECA]{img_tt}", "type": "IMAGE"} if img_tt else None,
+            },
+        }
+        if not tt_payload["content"].get("media"):
+            tt_payload["content"].pop("media", None)
+
+        for net_key, payload_data in [("ig", ig_payload), ("fb", fb_payload), ("li", li_payload), ("tt", tt_payload)]:
+            rows.append({
+                "org_id": org_id,
+                "source_event_id": f"orbitAI_{uid}_{net_key}_{uuid.uuid4().hex[:8]}",
+                "event_source": "orbit_ai",
+                "event_type": "create_organic_post",
+                "event_version": "v1",
+                "event_request_timestamp": ts_unix,
+                "payload": json.dumps(payload_data, ensure_ascii=False),
+                "status": "pending",
+            })
+
+    os.makedirs(EVENTS_DIR, exist_ok=True)
+    fname = f"orbitai_events_{org_id}_{ts_unix}.csv"
+    fpath = os.path.join(EVENTS_DIR, fname)
+    df_events = pd.DataFrame(rows)
+    df_events.to_csv(fpath, index=False, quoting=csv.QUOTE_ALL)
+    return fpath
+
+
 def select_articles(articles, count=5, article_id=None, wp_post_id=None):
     selected = articles
     if article_id:
@@ -444,15 +578,12 @@ def select_articles(articles, count=5, article_id=None, wp_post_id=None):
 
 def run(api_key, wp_url=DEFAULT_WP_URL, count=5, article_id=None, wp_post_id=None, dry_run=False, delay=4):
     ensure_dirs()
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(MODEL_NAME)
-    if not article_id and not wp_post_id:
-        validate_model_access(model)
+    os.makedirs(EVENTS_DIR, exist_ok=True)
 
     articles = load_published_articles(CSV_DIR)
     selected = select_articles(articles, count=count, article_id=article_id, wp_post_id=wp_post_id)
     if not selected:
-        raise ValueError("Nenhum artigo publicado encontrado para processar.")
+        raise ValueError("Nenhum artigo (published ou draft) encontrado para processar.")
 
     for article in selected:
         article["url"] = fetch_post_url(wp_url, article["wp_post_id"])
@@ -480,9 +611,10 @@ def run(api_key, wp_url=DEFAULT_WP_URL, count=5, article_id=None, wp_post_id=Non
         unique_id = f"{article['unique_import_id']}__wp{article['wp_post_id']}"
         recent_ctas = {network: get_recent_ctas(history, network) for network in NETWORKS}
         try:
-            payload = generate_social_payload(model, article, recent_ctas)
+            payload = generate_social_payload(api_key, article, recent_ctas)
             validate_payload(payload, recent_ctas)
             saved_files = save_network_files(article, payload)
+            article["_payload"] = payload  # para events CSV
 
             for network in NETWORKS:
                 history.setdefault(network, []).append(payload[network]["cta"].strip())
@@ -515,12 +647,20 @@ def run(api_key, wp_url=DEFAULT_WP_URL, count=5, article_id=None, wp_post_id=Non
     report_path = generate_report(results, timestamp)
     log(Colors.OKGREEN, "REPORT", f"Relatorio salvo em {report_path}")
 
+    # Gerar events CSV consolidado para o backend Sowads
+    load_env_file()
+    org_id = os.environ.get("SOWADS_ORG_ID", "0-DUMMY-0")
+    successful_pairs = [(a, a["_payload"]) for a in selected if a.get("_payload")]
+    if successful_pairs:
+        events_path = build_events_csv(successful_pairs, org_id, timestamp)
+        log(Colors.OKGREEN, "EVENTS", f"CSV de eventos salvo em {events_path}")
+
 
 def main():
     parser = argparse.ArgumentParser(
         description="Orbit Social Agent - gera copies para LinkedIn, Instagram e Facebook."
     )
-    parser.add_argument("--api_key", help="Gemini API Key. Se omitido, usa GEMINI_API_KEY.")
+    parser.add_argument("--api_key", help="OpenRouter API Key. Se omitido, usa OPENROUTER_API_KEY.")
     parser.add_argument("--wp_url", default=DEFAULT_WP_URL, help="Base URL do WordPress.")
     parser.add_argument("--count", type=int, default=5, help="Quantidade de artigos recentes. Padrao: 5")
     parser.add_argument("--article_id", help="Filtra por unique_import_id, ex: Orbit_27")
