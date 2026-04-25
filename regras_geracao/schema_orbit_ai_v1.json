@@ -140,7 +140,7 @@
             "faq_as_training_data": "FAQ deve conter perguntas reais que usuários fariam ao ChatGPT/Gemini/Perplexity — formato pergunta-resposta direta.",
             "structured_data": "JSON-LD FAQPage obrigatório para Google rich results E para que IAs identifiquem Q&A pairs.",
             "topic_completeness": "Cobrir o tema de forma exaustiva: definição, benefícios, como fazer, erros comuns, exemplos, comparações.",
-            "citation_worthy": "Incluir dados, estatísticas ou exemplos concretos que IAs possam citar como fonte.",
+            "citation_worthy": "Incluir exemplos concretos de cenários operacionais e casos de uso que IAs possam citar como referência — sem inventar números ou estatísticas não verificadas.",
             "conversational_tone": "Tom natural que soa bem quando lido por assistente de voz ou citado por IA.",
             "summary_paragraph": "Incluir parágrafo resumo no início ou final que sintetize o artigo em 2-3 frases — formato ideal para snippets de IA."
         },
@@ -164,7 +164,7 @@
             "comparative_tables": "Incluir tabelas comparativas (<table> com <thead> e <tbody>) sempre que o tema envolver comparação de ferramentas, estratégias, métricas ou cenários antes/depois.",
             "lists": "Usar listas com marcadores (<ul><li>) para enumerações e listas ordenadas (<ol><li>) para processos passo-a-passo ou rankings.",
             "visual_hierarchy": "Alternar entre parágrafos, listas, tabelas e citações em destaque para manter a leitura fluida e orgânica.",
-            "opening_variety": "NUNCA iniciar dois artigos da mesma forma. Variar entre: pergunta provocativa, estatística impactante, cenário do leitor, afirmação ousada, analogia criativa.",
+            "opening_variety": "NUNCA iniciar dois artigos da mesma forma. Variar entre: pergunta provocativa, cenário do leitor, afirmação ousada, analogia criativa.",
             "subtle_cta": "Encerrar com um CTA natural e não-agressivo. Convite para conhecer mais ou conversar com a equipe Sowads. Sem linguagem de vendas forçada."
         },
         "technical_seo_reinforced": {

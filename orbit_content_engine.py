@@ -249,7 +249,6 @@ def generate_prompt(topic, rules_json, briefing=None):
     3. {compliance.get('no_legal_advice', {}).get('rule', '')}
 
     ELEMENTOS VERIFICÁVEIS OBRIGATÓRIOS (o artigo será auditado por esses critérios):
-    - Mínimo 3 referências numéricas concretas (%, R$, anos, estatísticas, prazos)
     - 1 tabela HTML comparativa (use <table> com <thead> e <tbody>)
     - Mínimo 3 H3 dentro dos H2
     - FAQ com mínimo 5 perguntas e respostas completas
