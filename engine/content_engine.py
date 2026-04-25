@@ -1,4 +1,5 @@
 import os
+import sys
 import csv
 import json
 import time
@@ -9,16 +10,21 @@ import warnings
 import requests
 from datetime import datetime
 import pandas as pd
-from orbit_publisher import CATEGORY_KEYWORDS, FALLBACK_CATEGORY
-from orbit_media_indexer import load_index, save_index, get_images_for_article
+
+# Resolve project root so this script works from any CWD
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, BASE_DIR)
+
+from engine.publisher import CATEGORY_KEYWORDS, FALLBACK_CATEGORY
+from engine.media_indexer import load_index, save_index, get_images_for_article
 
 warnings.filterwarnings("ignore")
 
 # --- Configuration ---
-RULES_PATH = "regras_geracao/schema_orbit_ai_v1.json"
-BRIEFINGS_DIR = "briefings"
-OUTPUT_DIR = "output_csv_batches_v2"
-REPORTS_DIR = "relatorios"
+RULES_PATH    = os.path.join(BASE_DIR, "config", "schema_orbit_ai_v1.json")
+BRIEFINGS_DIR = os.path.join(BASE_DIR, "briefings")
+OUTPUT_DIR    = os.path.join(BASE_DIR, "output", "articles")
+REPORTS_DIR   = os.path.join(BASE_DIR, "output", "reports")
 BATCH_SIZE = 20
 MAX_RETRIES = 2
 MIN_SCORE = 80
@@ -660,14 +666,14 @@ def main():
 
     rules = load_json(RULES_PATH)
 
-    from orbit_qa_validator import OrbitValidator
+    from engine.qa_validator import OrbitValidator
     validator = OrbitValidator()
     print(f"{Colors.OKCYAN}[INFO] Validator carregado (min score: {MIN_SCORE}){Colors.ENDC}")
 
     # Carrega índice de imagens do WordPress
     media_index = {}
     if args.wp_url and args.wp_user and args.wp_pass:
-        from orbit_media_indexer import fetch_all_media, build_index, save_index
+        from engine.media_indexer import fetch_all_media, build_index, save_index
         print(f"{Colors.OKCYAN}[MEDIA] Buscando biblioteca de imagens do WordPress...{Colors.ENDC}")
         try:
             items = fetch_all_media(args.wp_url, args.wp_user, args.wp_pass)

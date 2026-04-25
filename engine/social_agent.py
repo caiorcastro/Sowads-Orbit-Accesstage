@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import json
 import glob
@@ -10,16 +11,18 @@ import uuid
 import pandas as pd
 import requests
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, BASE_DIR)
 
-CSV_DIR = "output_csv_batches_v2"
-OUTPUT_DIR = "output_social_copies"
-EVENTS_DIR = "output_sowads_events"
-REPORTS_DIR = "relatorios"
+CSV_DIR          = os.path.join(BASE_DIR, "output", "articles")
+OUTPUT_DIR       = os.path.join(BASE_DIR, "output", "social")
+EVENTS_DIR       = os.path.join(BASE_DIR, "output", "events")
+REPORTS_DIR      = os.path.join(BASE_DIR, "output", "reports")
 CTA_HISTORY_FILE = os.path.join(OUTPUT_DIR, "_cta_history.json")
-DEFAULT_WP_URL = "https://sowads.com.br"
+DEFAULT_WP_URL   = "https://sowads.com.br"
 MODEL_NAME = "deepseek/deepseek-v4-pro"
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-ENV_FILE = ".env"
+ENV_FILE = os.path.join(BASE_DIR, ".env")
 
 NETWORKS = {
     "linkedin": {

@@ -11,9 +11,13 @@ import requests
 import pandas as pd
 from datetime import datetime
 
+import sys as _sys
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_sys.path.insert(0, _BASE_DIR)
+
 # --- Configuration ---
-OUTPUT_DIR = "output_csv_batches_v2"
-REPORTS_DIR = "relatorios"
+OUTPUT_DIR  = os.path.join(_BASE_DIR, "output", "articles")
+REPORTS_DIR = os.path.join(_BASE_DIR, "output", "reports")
 
 # Keyword mapping for intelligent category detection.
 # Keys = category name; Values = list of keywords to match in title+content.

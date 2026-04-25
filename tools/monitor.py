@@ -8,7 +8,8 @@ import os, re, sys, time, argparse
 from datetime import datetime, timedelta
 from collections import deque
 
-LOG_PATH    = "relatorios/run_pipeline.log"
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOG_PATH  = os.path.join(_BASE_DIR, "output", "reports", "run_pipeline.log")
 TOTAL_AUTO  = 20
 TOTAL_TUR   = 20
 TOTAL_ALL   = TOTAL_AUTO + TOTAL_TUR

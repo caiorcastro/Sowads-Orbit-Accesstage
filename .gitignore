@@ -1,9 +1,5 @@
 # Outputs
-output_artigos/
-output_csv_batches/
-output_csv_batches_v2/
-relatorios/
-modelos/
+output/
 
 # System
 .DS_Store

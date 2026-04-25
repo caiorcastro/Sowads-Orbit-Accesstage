@@ -44,7 +44,8 @@ import argparse
 import requests
 from datetime import datetime
 
-INDEX_PATH = "relatorios/media_index.json"
+_BASE_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+INDEX_PATH = os.path.join(_BASE_DIR, "output", "reports", "media_index.json")
 
 TYPE_MAP = {
     'blog': 'blog', 'wp': 'blog',

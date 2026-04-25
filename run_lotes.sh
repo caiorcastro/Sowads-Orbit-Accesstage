@@ -1,14 +1,11 @@
 #!/bin/bash
-# run_lotes.sh — Pipeline completo: auto + turismo + publicação como rascunho
+# run_lotes.sh — Gera todos os lotes de artigos (nunca publica automaticamente)
 
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
-LOG_DIR="$BASE_DIR/relatorios"
+LOG_DIR="$BASE_DIR/output/reports"
 LOG="$LOG_DIR/run_pipeline.log"
 mkdir -p "$LOG_DIR"
 
-WP_URL="https://sowads.com.br"
-WP_USER="caio"
-WP_PASS="${WORDPRESS_PASSWORD}"
 MODEL="deepseek/deepseek-v4-pro"
 
 cd "$BASE_DIR"
@@ -21,52 +18,30 @@ if [ -f "$BASE_DIR/.env" ]; then
   set +a
 fi
 
+WP_URL="${WORDPRESS_URL}"
+WP_USER="${WORDPRESS_USER}"
+WP_PASS="${WORDPRESS_PASSWORD}"
+
 echo "" >> "$LOG"
 echo "════════════════════════════════════════" >> "$LOG"
 echo "PIPELINE INICIADO: $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG"
 echo "════════════════════════════════════════" >> "$LOG"
 
-# ── LOTE AUTO ───────────────────────────────
-echo "" >> "$LOG"
-echo "▶ LOTE AUTO — $(date '+%H:%M:%S')" >> "$LOG"
-echo "────────────────────────────────────────" >> "$LOG"
-
-python3 orbit_content_engine.py \
-  --model "$MODEL" \
-  --wp_url "$WP_URL" \
-  --wp_user "$WP_USER" \
-  --wp_pass "$WP_PASS" \
-  --csv_input "output_csv_batches_v2/lote_auto_temas.csv" \
-  2>&1 | tee -a "$LOG"
-
-if [ ${PIPESTATUS[0]} -ne 0 ]; then
-  echo "ERRO no lote auto. Abortando." >> "$LOG"
-  exit 1
-fi
-
-echo "" >> "$LOG"
-echo "✅ LOTE AUTO CONCLUÍDO — $(date '+%H:%M:%S')" >> "$LOG"
-
-# ── LOTE TURISMO ─────────────────────────────
-echo "" >> "$LOG"
-echo "▶ LOTE TURISMO — $(date '+%H:%M:%S')" >> "$LOG"
-echo "────────────────────────────────────────" >> "$LOG"
-
-python3 orbit_content_engine.py \
-  --model "$MODEL" \
-  --csv_input "output_csv_batches_v2/lote_turismo_temas.csv" \
-  2>&1 | tee -a "$LOG"
-
-if [ ${PIPESTATUS[0]} -ne 0 ]; then
-  echo "ERRO no lote turismo. Abortando." >> "$LOG"
-  exit 1
-fi
-
-echo "" >> "$LOG"
-echo "✅ LOTE TURISMO CONCLUÍDO — $(date '+%H:%M:%S')" >> "$LOG"
+# ── Adicione um bloco por lote seguindo o padrão abaixo ──────────────────────
+# Exemplo: lote fintech
+# echo "" >> "$LOG"
+# echo "▶ LOTE FINTECH — $(date '+%H:%M:%S')" >> "$LOG"
+# python3 engine/content_engine.py \
+#   --model "$MODEL" \
+#   --wp_url "$WP_URL" --wp_user "$WP_USER" --wp_pass "$WP_PASS" \
+#   --csv_input "output/articles/lote_fintech_temas.csv" \
+#   2>&1 | tee -a "$LOG"
+# if [ ${PIPESTATUS[0]} -ne 0 ]; then echo "ERRO no lote fintech." >> "$LOG"; exit 1; fi
+# echo "✅ LOTE FINTECH CONCLUÍDO — $(date '+%H:%M:%S')" >> "$LOG"
+# ─────────────────────────────────────────────────────────────────────────────
 
 echo "" >> "$LOG"
 echo "════════════════════════════════════════" >> "$LOG"
 echo "✅ GERAÇÃO COMPLETA — $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG"
-echo "Para publicar: python3 orbit_publisher.py --test_one (valide 1 artigo antes)" >> "$LOG"
+echo "Para publicar: python3 engine/publisher.py --test_one" >> "$LOG"
 echo "════════════════════════════════════════" >> "$LOG"
