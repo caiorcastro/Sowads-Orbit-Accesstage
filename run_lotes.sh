@@ -8,10 +8,18 @@ mkdir -p "$LOG_DIR"
 
 WP_URL="https://sowads.com.br"
 WP_USER="caio"
-WP_PASS="Ltx%Z7@*sh%MbXo2waNJZEwB"
-MODEL="google/gemini-2.5-flash"
+WP_PASS="${WORDPRESS_PASSWORD}"
+MODEL="deepseek/deepseek-v4-pro"
 
 cd "$BASE_DIR"
+
+# Carrega variáveis do .env
+if [ -f "$BASE_DIR/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$BASE_DIR/.env"
+  set +a
+fi
 
 echo "" >> "$LOG"
 echo "════════════════════════════════════════" >> "$LOG"

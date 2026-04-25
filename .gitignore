@@ -10,9 +10,10 @@ modelos/
 __pycache__/
 *.pyc
 
-# Env
+# Env / Credentials
 .env
 *.env
+client/credentials.env
 
 # Claude
 .claude/

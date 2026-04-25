@@ -635,7 +635,7 @@ def main():
     parser = argparse.ArgumentParser(description="Orbit AI Content Engine — OpenRouter + Briefings")
     parser.add_argument("--openrouter_key", default=os.environ.get("OPENROUTER_API_KEY"), help="Chave OpenRouter")
     parser.add_argument("--api_key",        default=None, help="Alias para --openrouter_key (compatibilidade)")
-    parser.add_argument("--model",          default="google/gemini-2.5-flash-preview", help="Modelo primário OpenRouter")
+    parser.add_argument("--model",          default="deepseek/deepseek-v4-pro", help="Modelo primário OpenRouter")
     parser.add_argument("--fallback_model", default=None, help="Modelo fallback OpenRouter (opcional)")
     parser.add_argument("--csv_input",      default=None, help="Caminho para CSV com temas")
     parser.add_argument("--start_batch",    type=int, default=1, help="Iniciar a partir deste batch")

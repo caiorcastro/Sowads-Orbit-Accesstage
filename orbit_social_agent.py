@@ -17,7 +17,7 @@ EVENTS_DIR = "output_sowads_events"
 REPORTS_DIR = "relatorios"
 CTA_HISTORY_FILE = os.path.join(OUTPUT_DIR, "_cta_history.json")
 DEFAULT_WP_URL = "https://sowads.com.br"
-MODEL_NAME = "google/gemini-2.5-flash"
+MODEL_NAME = "deepseek/deepseek-v4-pro"
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 ENV_FILE = ".env"
 
@@ -452,7 +452,7 @@ def extract_img_filename(url):
     return url.strip().split("/")[-1]
 
 
-def build_events_csv(articles_with_payloads, org_id, timestamp):
+def build_events_csv(articles_with_payloads, org_id):
     """
     Gera o CSV de eventos no formato Sowads Backend:
     org_id, source_event_id, event_source, event_type, event_version,
@@ -652,7 +652,7 @@ def run(api_key, wp_url=DEFAULT_WP_URL, count=5, article_id=None, wp_post_id=Non
     org_id = os.environ.get("SOWADS_ORG_ID", "0-DUMMY-0")
     successful_pairs = [(a, a["_payload"]) for a in selected if a.get("_payload")]
     if successful_pairs:
-        events_path = build_events_csv(successful_pairs, org_id, timestamp)
+        events_path = build_events_csv(successful_pairs, org_id)
         log(Colors.OKGREEN, "EVENTS", f"CSV de eventos salvo em {events_path}")
 
 
