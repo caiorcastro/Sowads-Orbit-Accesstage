@@ -23,6 +23,7 @@ warnings.filterwarnings("ignore")
 # --- Configuration ---
 RULES_PATH    = os.path.join(BASE_DIR, "config", "schema_orbit_ai_v1.json")
 BRIEFINGS_DIR = os.path.join(BASE_DIR, "briefings")
+CLIENT_DIR    = os.path.join(BASE_DIR, "client")
 OUTPUT_DIR    = os.path.join(BASE_DIR, "output", "articles")
 REPORTS_DIR   = os.path.join(BASE_DIR, "output", "reports")
 BATCH_SIZE = 20
@@ -146,6 +147,61 @@ def load_briefing(topic):
 
 
 # ─────────────────────────────────────────────
+# Contexto do cliente (compliance + produtos)
+# ─────────────────────────────────────────────
+
+def load_client_compliance():
+    """Lê guia_agente.md com tom, keywords obrigatórias e blacklist do cliente."""
+    path = os.path.join(CLIENT_DIR, "guia_agente.md")
+    if not os.path.exists(path):
+        return ""
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def load_product_context(topic):
+    """Extrai a seção de dossie_produtos.md mais relevante para o tema dado."""
+    path = os.path.join(CLIENT_DIR, "dossie_produtos.md")
+    if not os.path.exists(path):
+        return ""
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    topic_lower = topic.lower()
+    MODULE_KEYWORDS = {
+        "### 1.1": ["contas a pagar", "pagamento", "comprovante", "autorização"],
+        "### 1.2": ["tesouraria", "extrato", "saldo", "multibanco", "tarifas", "tesoureiro"],
+        "### 1.3": ["crédito", "antecipação", "recebíveis", "risco sacado", "supply chain", "capital de giro"],
+        "### 1.4": ["analytics", "dados preditivos", "relatório", "dashboard", "planejamento"],
+        "## 2.":   ["edi", "api", "open finance", "van bancária", "cnab", "integração bancária", "baas"],
+        "## 3.":   ["cash pooling"],
+    }
+
+    best_marker, best_score = None, 0
+    for marker, keywords in MODULE_KEYWORDS.items():
+        score = sum(1 for kw in keywords if kw in topic_lower)
+        if score > best_score:
+            best_score, best_marker = score, marker
+
+    if best_marker is None:
+        return content[:2000]
+
+    start = content.find(best_marker)
+    if start == -1:
+        return content[:2000]
+
+    # Find end of section (next heading at same or higher level)
+    end = len(content)
+    level = best_marker.count("#")
+    for pattern in ["\n" + "#" * level + " ", "\n" + "#" * (level - 1) + " "]:
+        idx = content.find(pattern, start + 1)
+        if idx != -1 and idx < end:
+            end = idx
+
+    return content[start:end].strip()
+
+
+# ─────────────────────────────────────────────
 # Carregamento de regras e .env
 # ─────────────────────────────────────────────
 
@@ -174,21 +230,16 @@ def load_env_file(path=".env"):
 # ─────────────────────────────────────────────
 
 def generate_prompt(topic, rules_json, briefing=None):
-    agent_profile = rules_json.get('agent_profile', {})
-    loc_settings   = rules_json.get('localization_settings', {})
-    output_reqs    = rules_json.get('output_requirements', {})
-    compliance     = rules_json.get('compliance_rules', {})
-    brand          = rules_json.get('sowads_brand', {})
-    seo_rules      = rules_json.get('advanced_seo_and_nlp_rules', {})
-    quality        = rules_json.get('content_quality_and_humanization', {})
-    tech_seo       = rules_json.get('technical_seo_mandates', {})
+    loc_settings    = rules_json.get('localization_settings', {})
+    output_reqs     = rules_json.get('output_requirements', {})
+    compliance      = rules_json.get('compliance_rules', {})
+    seo_rules       = rules_json.get('advanced_seo_and_nlp_rules', {})
+    quality         = rules_json.get('content_quality_and_humanization', {})
+    tech_seo        = rules_json.get('technical_seo_mandates', {})
 
-    independence_rule = compliance.get('product_independence', {}).get('rule', '')
-    no_promises       = compliance.get('no_false_promises', {}).get('rule', '')
-
-    products_info = ""
-    for key, prod in brand.get('products', {}).items():
-        products_info += f"- {prod.get('name')}: {prod.get('description')}\n"
+    # Client context — loaded fresh each call from client/*.md
+    client_compliance = load_client_compliance()
+    product_context   = load_product_context(topic)
 
     aio_rules   = seo_rules.get('aio_optimization_rules', {})
     aio_section = ""
@@ -217,7 +268,10 @@ def generate_prompt(topic, rules_json, briefing=None):
     for key, val in kw_strategy.items():
         kw_section += f"    - {val}\n"
 
-    # Briefing injection (dados reais além do corte da IA)
+    no_promises = compliance.get('no_false_promises', {}).get('rule', '')
+    no_legal    = compliance.get('no_legal_advice', {}).get('rule', '')
+
+    # Optional blocks injected when available
     briefing_block = ""
     if briefing:
         briefing_block = f"""
@@ -229,30 +283,42 @@ def generate_prompt(topic, rules_json, briefing=None):
     ════════════════════════════════════════
 """
 
+    compliance_block = ""
+    if client_compliance:
+        compliance_block = f"""
+    ════════════════════════════════════════
+    REGRAS DO CLIENTE ACCESSTAGE — LEIA ANTES DE ESCREVER:
+
+    {client_compliance}
+    ════════════════════════════════════════
+"""
+
+    product_block = ""
+    if product_context:
+        product_block = f"""
+    ════════════════════════════════════════
+    CONTEXTO DO PRODUTO ACCESSTAGE RELEVANTE PARA ESTE TEMA:
+
+    {product_context}
+    ════════════════════════════════════════
+"""
+
     prompt = f"""
     PERSONA DO LEITOR (leia antes de qualquer coisa):
-    Gestor, profissional de marketing ou empreendedor brasileiro, 28–50 anos, formação superior.
-    Consome o artigo no celular ou entre reuniões. Vai embora se o conteúdo for genérico, vago
-    ou enrolado. Quer profundidade, dados reais e conclusões acionáveis. Escreva para ele.
+    CFO, diretor financeiro, gestor de tesouraria ou controller de empresa brasileira de médio/grande porte.
+    Lê entre reuniões. Vai embora se o conteúdo for genérico, vago ou enrolado.
+    Quer profundidade técnica, exemplos concretos do mercado financeiro e conclusões acionáveis.
+    Escreva com autoridade consultiva — como um par especialista, não como um vendedor.
 
     ════════════════════════════════════════
-    ROLE: {agent_profile.get('agent_name')}
-    DIRECTIVE: {agent_profile.get('primary_directive')}
-    PHILOSOPHY: {agent_profile.get('core_philosophy')}
-
-    TASK: Gerar um pacote de conteúdo WordPress para o tema: "{topic}"
-    Público-alvo: Brasil ({', '.join(loc_settings.get('audience_country_supported', []))})
-    Idioma: {loc_settings.get('force_language')}
-{briefing_block}
-    SOBRE A SOWADS:
-    {products_info}
-    Serviços: {', '.join(brand.get('services', []))}
-
-    REGRAS DE COMPLIANCE:
-    1. INDEPENDÊNCIA DE PRODUTOS: {independence_rule}
-       ⚠️ ATENÇÃO ESPECIAL: Se o tema envolve "Mídia Paga", "anúncios" ou "tráfego pago", é PROIBIDO sugerir que anúncios melhoram ranqueamento orgânico, autoridade de domínio ou posição nos buscadores. Tratá-los sempre como canais paralelos e independentes. Violações invalidam o artigo.
-    2. SEM FALSAS PROMESSAS: {no_promises}
-    3. {compliance.get('no_legal_advice', {}).get('rule', '')}
+    MISSÃO: Gerar artigo completo para o blog da Accesstage (https://blog.accesstage.com.br/)
+    TEMA: "{topic}"
+    IDIOMA: {loc_settings.get('force_language', 'pt-BR')}
+    PÚBLICO: Gestores financeiros, CFOs e diretores de tesouraria de empresas brasileiras
+{briefing_block}{compliance_block}{product_block}
+    REGRAS GERAIS DE COMPLIANCE:
+    - SEM FALSAS PROMESSAS: {no_promises}
+    - {no_legal}
 
     ELEMENTOS VERIFICÁVEIS OBRIGATÓRIOS (o artigo será auditado por esses critérios):
     - 1 tabela HTML comparativa (use <table> com <thead> e <tbody>)
@@ -262,18 +328,18 @@ def generate_prompt(topic, rules_json, briefing=None):
 
     SEÇÕES ESTRUTURAIS OBRIGATÓRIAS (dentro dessas, crie H2s temáticos livres):
     - ABERTURA: contextualiza o problema com dado real ou pergunta provocativa; sem enrolação
-    - DESENVOLVIMENTO: ao menos 4 H2 com profundidade real, dados e exemplos práticos
-    - ERROS COMUNS: liste ao menos 3 erros reais que gestores cometem no tema, com explicação
-    - FAQ: mínimo 5 perguntas que um leitor real faria, com respostas diretas e completas
-    - CONCLUSÃO + CTA: encerra com síntese e chamada natural para a Sowads
+    - DESENVOLVIMENTO: ao menos 4 H2 com profundidade real e exemplos práticos do mercado financeiro corporativo
+    - ERROS COMUNS: liste ao menos 3 erros reais que gestores financeiros cometem no tema, com explicação
+    - FAQ: mínimo 5 perguntas que um CFO real faria, com respostas diretas e completas
+    - CONCLUSÃO + CTA: encerra com síntese e chamada natural para conhecer a Accesstage e a plataforma Veragi
 
     REGRAS DE FORMATAÇÃO:
-    1. {output_reqs.get('wordpress_compatibility_rule')}
+    1. {output_reqs.get('wordpress_compatibility_rule', 'A resposta DEVE ter 2 blocos claramente separados.')}
     2. Bloco 1: Meta Title (máx {tech_seo.get('character_limits', {}).get('meta_title_tag', '60 chars')}) & Meta Description (máx {tech_seo.get('character_limits', {}).get('meta_description_tag', '155 chars')}) em texto plano.
     3. Bloco 2: Conteúdo HTML iniciando com <article lang="pt-BR"> e terminando com </article>.
     4. PROIBIDO: <a href>, <img>, <figure>, links externos, URLs de imagem, placeholders, blocos <script>, JSON-LD ou qualquer código técnico — o conteúdo deve ser HTML editorial puro.
     5. FAQ em HTML puro, sem schema markup. Use a estrutura de seção abaixo.
-    6. Hierarquia: um único H1 (máx {tech_seo.get('character_limits', {}).get('h1_tag', '60 chars')}); H2/H3 para seções.
+    6. NÃO incluir H1 no conteúdo — o WordPress usa o título do post como H1. Use H2/H3 para seções.
     {kw_section}
     REGRAS SEO/NLP:
     - {seo_rules.get('semantic_enrichment_lsi', {}).get('rule', '')}
@@ -283,7 +349,7 @@ def generate_prompt(topic, rules_json, briefing=None):
     {tech_section}
     QUALIDADE:
     - {quality.get('readability_targets', {}).get('rule', '')}
-    - CTA: {loc_settings.get('cta_text', '')}
+    - CTA final: convite consultivo e natural para conhecer a Accesstage e a Plataforma Veragi. Sem linguagem de vendas forçada.
 
     ESTILO DO FAQ (OBRIGATÓRIO — sem script, sem JSON-LD):
     <section class="faq-section" style="background:#f8f9fa;border:1px solid #e2e2e2;border-radius:8px;padding:24px 28px;margin-top:32px;font-size:0.92em;line-height:1.6">
@@ -457,8 +523,8 @@ def analyze_article(content, meta_title, meta_desc):
         analysis['keyword_density']  = 0
         analysis['primary_keywords'] = ''
 
-    entities = ['Sowads', 'Orbit AI', 'Meta Ads', 'Google', 'ChatGPT', 'Gemini',
-                'Perplexity', 'WordPress', 'SEO', 'AIO', 'Facebook', 'Instagram']
+    entities = ['Accesstage', 'Veragi', 'Open Finance', 'CNAB', 'EDI',
+                'Google', 'ChatGPT', 'Gemini', 'Perplexity', 'SEO', 'AIO']
     found_entities = [e for e in entities if e.lower() in plain.lower()]
     analysis['entities']     = found_entities
     analysis['entity_count'] = len(found_entities)

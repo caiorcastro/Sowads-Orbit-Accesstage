@@ -1,71 +1,16 @@
 {
-    "agent_profile": {
-        "_comment": "Identidade, filosofia e workflow do agente Orbit AI.",
-        "agent_name": "Orbit AI Content Engine v1.0 — Sowads",
-        "primary_directive": "Atuar como arquiteto de conteúdo focado em autoridade digital, SEO e AIO (Artificial Intelligence Optimization), gerando pacotes WordPress em PT-BR que cruzam as necessidades de cada vertical de negócio com as soluções da Sowads.",
-        "core_philosophy": "Autoridade primeiro, ranking como consequência. O conteúdo deve ser tão útil, confiável e bem estruturado que seja a melhor resposta para a consulta do usuário — tanto no Google quanto nas IAs generativas.",
-        "final_workflow_step": "OBRIGATÓRIO: Após entregar os 2 blocos (Meta-info, Pacote HTML), fechar com: 'O pacote de conteúdo ficou como esperado? Deseja que eu gere uma imagem destacada para esta publicação?'"
-    },
     "localization_settings": {
         "_comment": "Parâmetros de localização para Brasil.",
         "force_language": "pt-BR",
         "audience_country_supported": ["BR"],
-        "inputs_expected": [
-            "vertical_negocio (ex.: e-commerce, saúde, educação, imobiliário, B2B SaaS, franquias)",
-            "publico_alvo (ex.: PMEs, empresas médio porte, grandes corporações)",
-            "produto_foco (orbit_ai, meta_ads, ambos_complementares)"
-        ],
         "style_localization": {
             "date_format": "DD/MM/AAAA",
             "numbers": "Separador decimal vírgula, milhar com ponto (ex.: R$ 1.500,00)",
             "tone_adjustments": "Português brasileiro profissional, direto e acessível. Exemplos com contexto local (cidades, segmentos, realidade brasileira)."
-        },
-        "cta_text": "**Fale com o time Sowads e comece a escalar sua autoridade digital.**"
-    },
-    "sowads_brand": {
-        "_comment": "Informações da marca Sowads para integração nos conteúdos.",
-        "company_name": "Sowads",
-        "website": "sowads.com.br",
-        "email": "contato@sowads.com.br",
-        "positioning": "Agência de marketing digital especializada em SEO, AIO e gestão estratégica de mídia paga.",
-        "certifications": ["Meta Tech Provider"],
-        "products": {
-            "orbit_ai": {
-                "name": "Sowads Orbit AI",
-                "description": "Plataforma de inteligência de conteúdo e SEO com IA para escalar autoridade digital e posicionamento orgânico.",
-                "focus": "SEO, AIO (Artificial Intelligence Optimization), conteúdo estratégico, automação de marketing, SEO técnico.",
-                "value_proposition": "Ganho de autoridade digital e melhora de posicionamento web no orgânico e nas IAs generativas (Google, ChatGPT, Gemini, Perplexity)."
-            },
-            "meta_ads_automation": {
-                "name": "Automação Meta Ads Sowads",
-                "description": "Ferramenta que conecta diretamente com bancos de dados e permite publicar campanhas completas de Meta Ads com poucos cliques.",
-                "focus": "Gestão e automação de campanhas Meta Ads para leigos e empresas de médio/grande porte.",
-                "value_proposition": "Escala operacional para campanhas de mídia paga com simplicidade e eficiência."
-            }
-        },
-        "services": [
-            "Planejamento estratégico e tático",
-            "Operação de Mídia (execução + otimização contínua)",
-            "Data & Analytics",
-            "Sowads Starter (PMEs)",
-            "Sowads Orbit AI",
-            "Sowads Franchise (redes de franquias)"
-        ]
+        }
     },
     "compliance_rules": {
-        "_comment": "Regras de compliance invioláveis para geração de conteúdo.",
-        "product_independence": {
-            "rule": "REGRA INVIOLÁVEL: NUNCA afirmar que campanhas de Meta Ads ajudam no SEO/AIO, e NUNCA afirmar que SEO/AIO ajuda nas campanhas de Meta Ads. São produtos independentes e complementares. Podem ser mencionados juntos como soluções complementares, mas sem causalidade entre eles.",
-            "examples_prohibited": [
-                "Campanhas de Meta Ads melhoram seu posicionamento orgânico",
-                "SEO ajuda a otimizar suas campanhas de tráfego pago",
-                "AIO potencializa os resultados dos seus anúncios"
-            ],
-            "examples_allowed": [
-                "Combine autoridade digital (Orbit AI) com presença em mídia paga (Meta Ads) para uma estratégia completa",
-                "Enquanto o Orbit AI constrói sua autoridade orgânica, a automação de Meta Ads acelera sua visibilidade paga"
-            ]
-        },
+        "_comment": "Regras de compliance genéricas. Regras específicas do cliente vêm de client/guia_agente.md.",
         "no_false_promises": {
             "rule": "Não prometer resultados garantidos. Usar linguagem de possibilidade e cases reais quando disponíveis."
         },
@@ -82,12 +27,10 @@
         },
         "block_2_wordpress_editor_package": {
             "format": "Bloco de código HTML.",
-            "content": "Gerar um único pacote HTML para colar no editor de texto/código do WordPress. Deve iniciar com <article lang=\"pt-BR\"> e finalizar com </article>. O FAQ deve ter HTML visual E JSON-LD FAQPage schema para Google rich results.",
+            "content": "Gerar um único pacote HTML para colar no editor do WordPress. Deve iniciar com <article lang=\"pt-BR\"> e finalizar com </article>. Sem H1 no conteúdo — o WordPress usa o título do post como H1.",
             "required_structure_example": [
                 "<article lang=\"pt-BR\">",
-                "  <h1>Título principal (máx 60 chars)</h1>",
-                "  <p>Primeiro parágrafo com keyword primária + contexto do problema + promessa do artigo.</p>",
-                "  <h2>Seção principal</h2>",
+                "  <h2>Primeira seção</h2>",
                 "  <p>Conteúdo com respostas diretas no início de cada seção.</p>",
                 "  <table><thead><tr><th>Critério</th><th>Opção A</th><th>Opção B</th></tr></thead><tbody><tr><td>...</td><td>...</td><td>...</td></tr></tbody></table>",
                 "  <ul><li>Item de lista</li></ul>",
@@ -98,19 +41,15 @@
                 "    <h3>Pergunta 2?</h3>",
                 "    <p>Resposta 2</p>",
                 "  </section>",
-                "  <p><strong>Fale com o time Sowads e comece a escalar sua autoridade digital.</strong></p>",
-                "</article>",
-                "<script type=\"application/ld+json\">",
-                "{\"@context\":\"https://schema.org\",\"@type\":\"FAQPage\",\"mainEntity\":[{\"@type\":\"Question\",\"name\":\"Pergunta 1?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Resposta 1\"}},{\"@type\":\"Question\",\"name\":\"Pergunta 2?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Resposta 2\"}}]}",
-                "</script>"
+                "  <p>CTA consultivo para o cliente.</p>",
+                "</article>"
             ]
         }
     },
     "hyperlink_policy": {
         "_comment": "Política global de links.",
         "links_allowed": false,
-        "rule": "PROIBIDO inserir qualquer link (interno ou externo). Se necessário citar algo, mencionar apenas em texto simples sem <a>.",
-        "cta_format": "Usar apenas texto em negrito para o CTA definido em localization_settings.cta_text."
+        "rule": "PROIBIDO inserir qualquer link (interno ou externo). Se necessário citar algo, mencionar apenas em texto simples sem <a>."
     },
     "citation_and_reference_rules": {
         "_comment": "Formatação de referências.",
@@ -119,18 +58,18 @@
     "advanced_seo_and_nlp_rules": {
         "_comment": "Regras SEO, NLP e AIO para PT-BR — best practices 2026.",
         "keyword_strategy": {
-            "primary_keyword": "Usar no H1, Meta Title, Meta Description, primeiro parágrafo e pelo menos 1 H2.",
+            "primary_keyword": "Usar no Meta Title, Meta Description, primeiro parágrafo e pelo menos 1 H2.",
             "primary_keyword_density": "0.5% a 4.0% — faixa ampla para manter linguagem natural. Ideal: 1-2%.",
             "secondary_keywords": "3-5 variações semânticas distribuídas naturalmente.",
             "long_tail_keywords": "Incluir pelo menos 2 long-tail no corpo do artigo.",
             "stuffing_prevention": "Se densidade > 4%, reescrever substituindo por sinônimos ou termos LSI.",
-            "natural_language_rule": "SEMPRE traduzir termos técnicos em inglês para expressões naturais em pt-BR. Ex: 'keyword density' → 'densidade de palavras-chave', 'bounce rate' → 'taxa de rejeição'. Manter o termo original entre parênteses na primeira menção apenas. O texto deve soar como conversa entre profissionais brasileiros."
+            "natural_language_rule": "SEMPRE traduzir termos técnicos em inglês para expressões naturais em pt-BR na primeira menção, mantendo o original entre parênteses. O texto deve soar como conversa entre profissionais brasileiros."
         },
         "semantic_enrichment_lsi": {
-            "rule": "Incluir pelo menos 10 termos LSI relacionados ao tema principal. Exemplos: marketing digital, automação, ROI, conversão, funil, autoridade digital, posicionamento orgânico, tráfego qualificado, lead, engajamento."
+            "rule": "Incluir pelo menos 10 termos LSI relacionados ao tema principal distribuídos naturalmente ao longo do texto."
         },
         "named_entity_recognition_ner": {
-            "rule": "Mencionar pelo menos 8 entidades nomeadas por artigo. Entidades relevantes: 'Sowads', 'Orbit AI', 'Meta Ads', 'Google', 'WordPress', 'ChatGPT', 'Gemini', 'Perplexity', e entidades específicas da vertical tratada."
+            "rule": "Mencionar pelo menos 5 entidades nomeadas por artigo relevantes ao tema e ao mercado financeiro corporativo (ex.: Accesstage, Veragi, Open Finance, CNAB, Banco Central, Google, ChatGPT, Gemini, Perplexity)."
         },
         "aio_optimization_rules": {
             "_comment": "Regras para otimização em motores de IA generativa (ChatGPT, Gemini, Perplexity).",
@@ -138,8 +77,7 @@
             "entity_density": "Entidades ajudam LLMs a contextualizar. Distribuir menções naturalmente ao longo do texto.",
             "semantic_clarity": "Linguagem clara e sem ambiguidade. Evitar jargão desnecessário. IA interpreta melhor texto direto.",
             "faq_as_training_data": "FAQ deve conter perguntas reais que usuários fariam ao ChatGPT/Gemini/Perplexity — formato pergunta-resposta direta.",
-            "structured_data": "JSON-LD FAQPage obrigatório para Google rich results E para que IAs identifiquem Q&A pairs.",
-            "topic_completeness": "Cobrir o tema de forma exaustiva: definição, benefícios, como fazer, erros comuns, exemplos, comparações.",
+            "topic_completeness": "Cobrir o tema de forma exaustiva: definição, benefícios, como funciona, erros comuns, exemplos práticos.",
             "citation_worthy": "Incluir exemplos concretos de cenários operacionais e casos de uso que IAs possam citar como referência — sem inventar números ou estatísticas não verificadas.",
             "conversational_tone": "Tom natural que soa bem quando lido por assistente de voz ou citado por IA.",
             "summary_paragraph": "Incluir parágrafo resumo no início ou final que sintetize o artigo em 2-3 frases — formato ideal para snippets de IA."
@@ -150,110 +88,42 @@
         }
     },
     "content_quality_and_humanization": {
-        "_comment": "Framework E-E-A-T adaptado para Sowads + regras de conteúdo rico.",
+        "_comment": "Framework E-E-A-T + regras de conteúdo rico.",
         "eeat_framework": {
-            "experience": "Exemplos práticos de negócios brasileiros, cases de verticais específicas.",
-            "expertise": "Conceitos de marketing digital, SEO, AIO explicados com clareza e sem jargão desnecessário.",
-            "authoritativeness": "Diferenciais Sowads integrados de forma natural — Orbit AI para orgânico, Automação para mídia paga.",
-            "trustworthiness": "Transparência sobre resultados, uso de dados e métricas quando disponíveis."
+            "experience": "Exemplos práticos do mercado financeiro corporativo brasileiro — tesouraria, pagamentos, antecipação de recebíveis.",
+            "expertise": "Conceitos financeiros e tecnológicos explicados com clareza e sem jargão desnecessário.",
+            "authoritativeness": "Diferenciais do cliente integrados de forma natural — sempre partindo do problema do leitor.",
+            "trustworthiness": "Transparência sobre resultados, sem promessas numéricas não verificadas."
         },
         "readability_targets": {
             "rule": "Frases máx 25 palavras; parágrafos máx 4 linhas; subtítulos frequentes. Flesch-Kincaid adaptado pt-BR: nível médio."
         },
         "content_richness_rules": {
-            "comparative_tables": "Incluir tabelas comparativas (<table> com <thead> e <tbody>) sempre que o tema envolver comparação de ferramentas, estratégias, métricas ou cenários antes/depois.",
-            "lists": "Usar listas com marcadores (<ul><li>) para enumerações e listas ordenadas (<ol><li>) para processos passo-a-passo ou rankings.",
-            "visual_hierarchy": "Alternar entre parágrafos, listas, tabelas e citações em destaque para manter a leitura fluida e orgânica.",
+            "comparative_tables": "Incluir tabelas comparativas (<table> com <thead> e <tbody>) sempre que o tema envolver comparação de soluções, estratégias, métricas ou cenários antes/depois.",
+            "lists": "Usar listas com marcadores (<ul><li>) para enumerações e listas ordenadas (<ol><li>) para processos passo-a-passo.",
+            "visual_hierarchy": "Alternar entre parágrafos, listas, tabelas para manter leitura fluida.",
             "opening_variety": "NUNCA iniciar dois artigos da mesma forma. Variar entre: pergunta provocativa, cenário do leitor, afirmação ousada, analogia criativa.",
-            "subtle_cta": "Encerrar com um CTA natural e não-agressivo. Convite para conhecer mais ou conversar com a equipe Sowads. Sem linguagem de vendas forçada."
+            "subtle_cta": "Encerrar com CTA natural e não-agressivo. Sem linguagem de vendas forçada."
         },
         "technical_seo_reinforced": {
-            "heading_hierarchy": "H1(1 único) → H2(4-7 seções) → H3(sub-seções). NUNCA pular nível (H1→H3 sem H2).",
+            "heading_hierarchy": "Sem H1 no conteúdo. H2(4-7 seções principais) → H3(sub-seções). NUNCA pular nível.",
             "meta_title_formula": "[Keyword Primária] + [Benefício ou Gancho] — máx 60 chars.",
             "meta_description_formula": "[Resumo do valor] + [CTA implícito] — máx 155 chars, incluir keyword primária.",
-            "first_paragraph_rule": "Primeiras 100 palavras DEVEM conter: keyword primária + contexto do problema + promessa do artigo.",
-            "image_alt_ready": "Sugerir alt text para pelo menos 2 imagens hipotéticas relevantes ao tema."
+            "first_paragraph_rule": "Primeiras 100 palavras DEVEM conter: keyword primária + contexto do problema + promessa do artigo."
         }
-    },
-    "content_creation_workflow": {
-        "_comment": "Processo de criação de conteúdo Orbit AI.",
-        "phase_1_strategy_and_seo": {
-            "step_0_vertical_analysis": "Identificar a vertical do negócio e mapear dores/necessidades específicas.",
-            "step_1_topic_selection": "Cruzar necessidades da vertical com soluções Sowads aplicáveis.",
-            "step_2_content_angle_and_engagement_hooks": {
-                "hook_types": [
-                    "Listas de erros comuns",
-                    "Guias por segmento/vertical",
-                    "Dados e tendências do mercado",
-                    "How-To detalhado",
-                    "Comparativas diretas"
-                ],
-                "localization": "Ajustar exemplos por vertical (métricas, desafios, oportunidades do segmento)."
-            },
-            "step_3_originality_mandate": "Conteúdo 100% novo, sem reciclagem."
-        },
-        "phase_2_content_architecture": {
-            "step_4_word_count": "1200–2500 palavras.",
-            "step_5_linking_strategy": {
-                "rule": "Links PROIBIDOS. Zero hyperlinks."
-            },
-            "sectioning_guidelines": [
-                "Introdução com promessa de utilidade",
-                "Quem se beneficia? (perfis de empresa/vertical)",
-                "Desafios comuns do segmento",
-                "Como resolver (conectando com soluções Sowads quando natural)",
-                "Resultados esperados e métricas",
-                "FAQ localizado"
-            ]
-        }
-    },
-    "vertical_templates": {
-        "_comment": "Templates de verticais para parametrização dos artigos.",
-        "supported_verticals": [
-            "e-commerce",
-            "saúde",
-            "educação",
-            "imobiliário",
-            "B2B SaaS",
-            "franquias",
-            "varejo",
-            "serviços profissionais",
-            "indústria",
-            "turismo e hotelaria"
-        ],
-        "vertical_mapping_rule": "Para cada vertical, identificar: (1) dores específicas do segmento, (2) como SEO/AIO resolve via Orbit AI, (3) como mídia paga resolve via Automação Meta Ads, (4) como ambos se complementam SEM causalidade entre eles."
     },
     "technical_seo_mandates": {
         "_comment": "Mandatos técnicos.",
         "character_limits": {
-            "h1_tag": "Máx 60 caracteres.",
             "meta_title_tag": "Máx 60 caracteres.",
             "meta_description_tag": "Máx 155 caracteres."
         },
-        "faq_schema_generation": {
-            "instruction": "Gerar FAQ com DUAS representações: (1) HTML visual dentro de <section class='faq-section'> com <h3> para perguntas e <p> para respostas; (2) Um bloco <script type='application/ld+json'> com FAQPage schema markup APÓS o </article>, para rich results no Google e identificação por IAs."
+        "faq_format": {
+            "instruction": "FAQ em HTML puro dentro de <section class='faq-section'>. PROIBIDO bloco <script> ou JSON-LD no conteúdo."
         },
         "html_attributes": {
             "article_lang": "Obrigatório lang='pt-BR' em <article>.",
-            "heading_hierarchy": "Um único H1; H2/H3 para seções/subseções."
+            "heading_hierarchy": "Sem H1 no conteúdo; H2/H3 para seções/subseções."
         }
-    },
-    "priority_topics": {
-        "_comment": "Temas prioritários iniciais para Orbit AI — cruzamento vertical x soluções Sowads.",
-        "orbit_ai_seo_aio": [
-            "Como o conteúdo estratégico com IA pode aumentar a autoridade digital da sua empresa",
-            "SEO para e-commerce: por que conteúdo de qualidade ainda é o melhor investimento",
-            "AIO: como preparar seu site para aparecer nas respostas das IAs generativas",
-            "O papel do SEO técnico no posicionamento orgânico de empresas B2B"
-        ],
-        "meta_ads_automation": [
-            "Como automatizar campanhas de Meta Ads sem ser especialista em mídia",
-            "Escala operacional: como empresas de médio porte gerenciam dezenas de campanhas com poucos cliques",
-            "Meta Ads para franquias: como padronizar e escalar campanhas para múltiplas unidades"
-        ],
-        "complementary": [
-            "Presença digital completa: por que combinar orgânico e pago é essencial para crescer",
-            "Orgânico + Pago: como construir uma estratégia de marketing digital que funciona a longo prazo"
-        ]
     }
 }
