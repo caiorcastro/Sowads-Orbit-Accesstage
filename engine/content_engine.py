@@ -7,7 +7,9 @@ import re
 import glob
 import argparse
 import warnings
+import threading
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 import pandas as pd
 
@@ -45,13 +47,19 @@ class Colors:
     ENDC    = '\033[0m'
     BOLD    = '\033[1m'
 
+# Thread-safe print — necessário para paralelismo
+_print_lock = threading.Lock()
+
+def tprint(*args, **kwargs):
+    with _print_lock:
+        print(*args, **kwargs, flush=True)
+
 
 # ─────────────────────────────────────────────
 # OpenRouter — chamada de API
 # ─────────────────────────────────────────────
 
-def call_openrouter(prompt, api_key, model, fallback_model=None, temperature=0.7, max_tokens=8000):
-    """Call OpenRouter API with optional fallback model on failure."""
+def call_openrouter(prompt, api_key, model, fallback_model=None, temperature=0.7, max_tokens=8000, pfx=""):
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": OPENROUTER_SITE,
@@ -65,41 +73,40 @@ def call_openrouter(prompt, api_key, model, fallback_model=None, temperature=0.7
         "temperature": temperature,
     }
 
-    prompt_chars = len(prompt)
-    prompt_tokens_est = prompt_chars // 4
-    print(f"  {Colors.OKCYAN}[API→] {model.split('/')[-1]} | prompt ~{prompt_chars:,} chars (~{prompt_tokens_est:,} tokens) | max_tokens={max_tokens}{Colors.ENDC}")
+    prompt_tokens_est = len(prompt) // 4
+    tprint(f"  {Colors.OKCYAN}{pfx}[API→] {model.split('/')[-1]} | ~{len(prompt):,} chars prompt (~{prompt_tokens_est:,} tokens){Colors.ENDC}")
 
     t0 = time.time()
     try:
-        resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=300)
+        resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=90)
         resp.raise_for_status()
-        data  = resp.json()
-        text  = data["choices"][0]["message"]["content"]
+        data    = resp.json()
+        text    = data["choices"][0]["message"]["content"]
         elapsed = time.time() - t0
-        usage = data.get("usage", {})
-        tokens_in  = usage.get("prompt_tokens", "?")
-        tokens_out = usage.get("completion_tokens", "?")
-        print(f"  {Colors.OKGREEN}[API←] {elapsed:.1f}s | {len(text):,} chars resposta | tokens: {tokens_in}→{tokens_out}{Colors.ENDC}")
+        usage   = data.get("usage", {})
+        tok_in  = usage.get("prompt_tokens", "?")
+        tok_out = usage.get("completion_tokens", "?")
+        tprint(f"  {Colors.OKGREEN}{pfx}[API←] {elapsed:.1f}s | {len(text):,} chars | tokens entrada:{tok_in} saída:{tok_out}{Colors.ENDC}")
         return text, model
     except Exception as e:
         elapsed = time.time() - t0
         if fallback_model:
-            print(f"  {Colors.WARNING}[API] Falha em {elapsed:.1f}s ({e}). Tentando fallback: {fallback_model}{Colors.ENDC}")
+            tprint(f"  {Colors.WARNING}{pfx}[API] Falha em {elapsed:.1f}s ({type(e).__name__}). Fallback: {fallback_model}{Colors.ENDC}")
             payload["model"] = fallback_model
             t0 = time.time()
             try:
-                resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=300)
+                resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=90)
                 resp.raise_for_status()
-                data = resp.json()
-                text = data["choices"][0]["message"]["content"]
+                data    = resp.json()
+                text    = data["choices"][0]["message"]["content"]
                 elapsed = time.time() - t0
-                usage = data.get("usage", {})
-                tokens_in  = usage.get("prompt_tokens", "?")
-                tokens_out = usage.get("completion_tokens", "?")
-                print(f"  {Colors.OKGREEN}[API←] fallback {elapsed:.1f}s | {len(text):,} chars | tokens: {tokens_in}→{tokens_out}{Colors.ENDC}")
+                usage   = data.get("usage", {})
+                tok_in  = usage.get("prompt_tokens", "?")
+                tok_out = usage.get("completion_tokens", "?")
+                tprint(f"  {Colors.OKGREEN}{pfx}[API←] fallback {elapsed:.1f}s | {len(text):,} chars | tokens:{tok_in}→{tok_out}{Colors.ENDC}")
                 return text, fallback_model
             except Exception as e2:
-                raise RuntimeError(f"Falha no modelo primário e no fallback: {e} | {e2}")
+                raise RuntimeError(f"Falha primário e fallback: {e} | {e2}")
         raise
 
 
@@ -431,7 +438,7 @@ def parse_response(response_text):
 # Self-Healing
 # ─────────────────────────────────────────────
 
-def self_heal(api_key, model, fallback_model, content, topic, validator):
+def self_heal(api_key, model, fallback_model, content, topic, validator, pfx=""):
     """Valida o conteúdo e tenta corrigir via OpenRouter se score < MIN_SCORE."""
     score, issues = validator.grade_article_raw(content)
 
@@ -462,13 +469,13 @@ def self_heal(api_key, model, fallback_model, content, topic, validator):
         {content}
         """
         try:
-            response_text, used_model = call_openrouter(fix_prompt, api_key, model, fallback_model)
+            response_text, used_model = call_openrouter(fix_prompt, api_key, model, fallback_model, pfx=pfx)
             new_content, _, _ = parse_response(response_text)
             if not new_content:
                 new_content = content
 
             score, issues = validator.grade_article_raw(new_content)
-            print(f"    {Colors.OKCYAN}[HEAL] Tentativa {attempt} ({used_model}): Score {score}/100{Colors.ENDC}")
+            tprint(f"  {Colors.OKCYAN}{pfx}[HEAL] tentativa {attempt} → Score {score}/100{Colors.ENDC}")
 
             if score >= MIN_SCORE:
                 return new_content, score, attempt, issues
@@ -476,7 +483,7 @@ def self_heal(api_key, model, fallback_model, content, topic, validator):
             content = new_content
 
         except Exception as e:
-            print(f"    {Colors.WARNING}[HEAL] Tentativa {attempt} falhou: {e}{Colors.ENDC}")
+            tprint(f"  {Colors.WARNING}{pfx}[HEAL] tentativa {attempt} falhou: {e}{Colors.ENDC}")
             break
 
     return content, score, MAX_RETRIES, issues
@@ -729,6 +736,7 @@ def main():
     parser.add_argument("--wp_url",  default=os.environ.get("WORDPRESS_URL"), help="URL WordPress (para índice de imagens)")
     parser.add_argument("--wp_user", default=os.environ.get("WORDPRESS_USER"), help="Usuário WordPress")
     parser.add_argument("--wp_pass", default=os.environ.get("WORDPRESS_PASSWORD"), help="App password WordPress")
+    parser.add_argument("--workers", type=int, default=3, help="Artigos em paralelo (default: 3)")
     args = parser.parse_args()
 
     # Resolve chave (--openrouter_key tem prioridade; --api_key como fallback de CLI)
@@ -810,89 +818,81 @@ def main():
         end_idx    = min(start_idx + BATCH_SIZE, len(topics))
         batch_topics = topics[start_idx:end_idx]
 
-        print(f"\n{Colors.HEADER}--- BATCH {batch_num}/{total_batches} (Temas {start_idx+1}–{end_idx}) ---{Colors.ENDC}")
+        tprint(f"\n{Colors.HEADER}--- BATCH {batch_num}/{total_batches} (Temas {start_idx+1}–{end_idx}) | workers={args.workers} ---{Colors.ENDC}")
 
-        batch_data = []
+        def generate_article(task):
+            global_idx, topic = task
+            pfx       = f"[{global_idx:02d}/{len(topics)}]"
+            art_t0    = time.time()
 
-        for i, topic in enumerate(batch_topics):
-            global_idx = start_idx + i + 1
-            art_t0     = time.time()
-            print(f"\n{Colors.BOLD}{'─'*60}{Colors.ENDC}")
-            print(f"{Colors.BOLD}[{global_idx}/{len(topics)}] {topic[:70]}{Colors.ENDC}")
+            tprint(f"\n{Colors.BOLD}{'─'*60}{Colors.ENDC}")
+            tprint(f"{Colors.BOLD}{pfx} {topic[:65]}{Colors.ENDC}")
 
             try:
-                # ── 1. Contexto do cliente ──────────────────────────────
+                # 1. Contexto do cliente
                 compliance_text = load_client_compliance()
                 product_text    = load_product_context(topic)
                 briefing        = load_briefing(topic)
-
                 ctx_parts = []
-                if compliance_text:
-                    ctx_parts.append(f"guia_agente ({len(compliance_text):,} chars)")
-                if product_text:
-                    ctx_parts.append(f"dossie_produtos ({len(product_text):,} chars)")
-                if briefing:
-                    ctx_parts.append(f"briefing ({len(briefing):,} chars)")
-                print(f"  {Colors.OKCYAN}[CTX]  {' | '.join(ctx_parts) if ctx_parts else 'sem contexto extra'}{Colors.ENDC}")
+                if compliance_text: ctx_parts.append(f"guia ({len(compliance_text):,}c)")
+                if product_text:    ctx_parts.append(f"produto ({len(product_text):,}c)")
+                if briefing:        ctx_parts.append(f"briefing ({len(briefing):,}c)")
+                tprint(f"  {Colors.OKCYAN}{pfx}[CTX] {' | '.join(ctx_parts) or 'sem contexto extra'}{Colors.ENDC}")
 
-                # ── 2. Geração de prompt ────────────────────────────────
+                # 2. Prompt + API
                 prompt = generate_prompt(topic, rules, briefing=briefing)
-
-                # ── 3. Chamada à API ────────────────────────────────────
                 response_text, used_model = call_openrouter(
-                    prompt, api_key, args.model, args.fallback_model
+                    prompt, api_key, args.model, args.fallback_model, pfx=pfx
                 )
 
-                # ── 4. Parse da resposta ────────────────────────────────
-                print(f"  {Colors.OKCYAN}[PARSE] Processando resposta...{Colors.ENDC}")
+                # 3. Parse
                 post_content, meta_title, meta_desc = parse_response(response_text)
+                plain_raw = re.sub(r'<[^>]+>', ' ', post_content)
+                wc        = len(plain_raw.split())
+                h2s       = len(re.findall(r'<h2[^>]*>', post_content))
+                h3s       = len(re.findall(r'<h3[^>]*>', post_content))
+                faqs      = len(re.findall(r'<h3[^>]*>.*?\?</h3>', post_content, re.DOTALL))
+                tabela    = bool(re.search(r'<table[\s>]', post_content))
+                tprint(f"  {Colors.OKCYAN}{pfx}[PARSE] {wc}p | H2:{h2s} H3:{h3s} FAQ:{faqs}q | Tabela:{'✓' if tabela else '✗'} | MT:{len(meta_title)}c MD:{len(meta_desc)}c{Colors.ENDC}")
 
-                plain_raw  = re.sub(r'<[^>]+>', ' ', post_content)
-                wc_raw     = len(plain_raw.split())
-                h2s_raw    = len(re.findall(r'<h2[^>]*>', post_content))
-                h3s_raw    = len(re.findall(r'<h3[^>]*>', post_content))
-                faq_raw    = len(re.findall(r'<h3[^>]*>.*?\?</h3>', post_content, re.DOTALL))
-                has_table  = bool(re.search(r'<table[\s>]', post_content))
-                mt_len     = len(meta_title)
-                md_len     = len(meta_desc)
-                print(f"  {Colors.OKCYAN}[PARSE] {wc_raw} palavras | H2:{h2s_raw} H3:{h3s_raw} FAQ:{faq_raw}q | Tabela:{'✓' if has_table else '✗'} | MetaTitle:{mt_len}c MetaDesc:{md_len}c{Colors.ENDC}")
-
-                # ── 5. QA + self-heal ───────────────────────────────────
-                print(f"  {Colors.OKCYAN}[QA]   Validando artigo...{Colors.ENDC}")
+                # 4. QA
                 score_pre, issues_pre = validator.grade_article_raw(post_content)
                 if issues_pre:
                     for iss in issues_pre:
-                        print(f"  {Colors.WARNING}[QA]   ⚠ {iss}{Colors.ENDC}")
+                        tprint(f"  {Colors.WARNING}{pfx}[QA] ⚠ {iss}{Colors.ENDC}")
                 else:
-                    print(f"  {Colors.OKGREEN}[QA]   Score inicial: {score_pre}/100 — sem issues{Colors.ENDC}")
+                    tprint(f"  {Colors.OKGREEN}{pfx}[QA] {score_pre}/100 — sem issues{Colors.ENDC}")
 
+                # 5. Self-heal se necessário
                 if score_pre < MIN_SCORE:
-                    print(f"  {Colors.WARNING}[HEAL] Score {score_pre} < {MIN_SCORE} — iniciando self-healing...{Colors.ENDC}")
-
+                    tprint(f"  {Colors.WARNING}{pfx}[HEAL] Score {score_pre} < {MIN_SCORE} — corrigindo...{Colors.ENDC}")
                 healed_content, final_score, retries, issues = self_heal(
                     api_key, args.model, args.fallback_model,
-                    post_content, topic, validator
+                    post_content, topic, validator, pfx=pfx
                 )
-
                 if retries > 0:
-                    plain_healed = re.sub(r'<[^>]+>', ' ', healed_content)
-                    wc_healed    = len(plain_healed.split())
-                    print(f"  {Colors.OKCYAN}[HEAL] Após {retries} correção(ões): {wc_healed} palavras | Score final: {final_score}/100{Colors.ENDC}")
+                    wc_h = len(re.sub(r'<[^>]+>', ' ', healed_content).split())
+                    tprint(f"  {Colors.OKCYAN}{pfx}[HEAL] Após {retries}x: {wc_h}p | Score final: {final_score}/100{Colors.ENDC}")
 
-                # ── 6. Análise e categorização ──────────────────────────
+                # 6. Análise e categoria
                 analysis       = analyze_article(healed_content, meta_title, meta_desc)
                 cat_suggestion = suggest_category(topic, healed_content)
                 article_id     = f"Orbit_{global_idx}"
 
-                # ── 7. Match de imagens ─────────────────────────────────
+                # 7. Imagens (se índice disponível)
                 images, img_score, img_key = get_images_for_article(article_id, topic, media_index)
                 images = images or {}
                 if images.get("blog"):
-                    print(f"  {Colors.OKGREEN}[IMG]  Match: {img_key} (score {img_score:.2f}){Colors.ENDC}")
-                else:
-                    print(f"  {Colors.WARNING}[IMG]  Sem imagem disponível{Colors.ENDC}")
+                    tprint(f"  {Colors.OKGREEN}{pfx}[IMG] Match: {img_key} (score {img_score:.2f}){Colors.ENDC}")
 
-                row = {
+                # 8. Resumo
+                elapsed     = time.time() - art_t0
+                score_color = Colors.OKGREEN if final_score >= MIN_SCORE else Colors.WARNING
+                extras      = (f" | {retries}x heal" if retries > 0 else "") + (" | briefing" if briefing else "")
+                tprint(f"  {score_color}{pfx} ✓ Score:{final_score}/100{extras} | {elapsed:.0f}s{Colors.ENDC}")
+
+                return {
+                    '_idx':              global_idx,
                     'unique_import_id':  article_id,
                     'post_title':        topic,
                     'post_content':      healed_content,
@@ -916,28 +916,32 @@ def main():
                     '_model_used':       used_model,
                     '_briefing_injected': bool(briefing),
                 }
-                batch_data.append(row)
-
-                # ── 8. Resumo do artigo ─────────────────────────────────
-                art_elapsed = time.time() - art_t0
-                score_color = Colors.OKGREEN if final_score >= MIN_SCORE else Colors.WARNING
-                heal_str    = f" | {retries} self-heal(s)" if retries > 0 else ""
-                briefing_str = " | briefing" if briefing else ""
-                print(f"  {score_color}✓ Score: {final_score}/100{heal_str}{briefing_str} | {art_elapsed:.0f}s total{Colors.ENDC}")
-                time.sleep(2)
 
             except Exception as e:
-                art_elapsed = time.time() - art_t0
-                print(f"  {Colors.FAIL}✗ ERRO em {art_elapsed:.0f}s: {e}{Colors.ENDC}")
-                batch_data.append({
+                elapsed = time.time() - art_t0
+                tprint(f"  {Colors.FAIL}{pfx} ✗ ERRO em {elapsed:.0f}s: {e}{Colors.ENDC}")
+                return {
+                    '_idx':         global_idx,
                     'post_title':   topic,
-                    'post_content': f"ERRO NA GERACAO: {str(e)}",
+                    'post_content': f"ERRO NA GERACAO: {e}",
                     'post_status':  'error',
                     'qa_score':     0,
                     'heal_retries': 0,
                     '_analysis':    {},
                     '_issues':      [str(e)],
-                })
+                }
+
+        tasks     = [(start_idx + i + 1, t) for i, t in enumerate(batch_topics)]
+        batch_data = []
+        with ThreadPoolExecutor(max_workers=args.workers) as executor:
+            futures = {executor.submit(generate_article, task): task for task in tasks}
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
+                    batch_data.append(result)
+
+        # Reordena pelo índice original (paralelismo quebra a ordem)
+        batch_data.sort(key=lambda x: x.get('_idx', 0))
 
         # Salva batch em CSV (sem campos internos _*)
         input_stem     = os.path.splitext(os.path.basename(csv_path))[0].replace("_temas", "")

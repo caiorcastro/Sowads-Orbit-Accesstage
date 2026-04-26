@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-monitor.py — Monitor de progresso do pipeline Orbit AI
+monitor.py — Monitor de progresso do pipeline Orbit AI (paralelo)
 Uso: python3 tools/monitor.py
      python3 tools/monitor.py --log output/reports/run_pipeline.log --total 10
 """
@@ -10,23 +10,23 @@ from collections import deque
 
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG_PATH  = os.path.join(_BASE_DIR, "output", "reports", "run_pipeline.log")
+REFRESH   = 2
 
-REFRESH = 2  # segundos entre atualizações
-
-# Padrões de parse — genéricos, sem dependência de nome de lote
-RE_GERANDO  = re.compile(r'\[(\d+)/(\d+)\] Gerando:(.+)')
-RE_SCORE    = re.compile(r'-> .*(Score: (\d+)/100)')
+# ── Padrões de parse ─────────────────────────────────────────────────────────
+RE_INICIO   = re.compile(r'PIPELINE INICIADO: (.+)')
 RE_LOTE     = re.compile(r'▶ LOTE ([A-Z0-9_\-]+)', re.IGNORECASE)
-RE_MEDIA    = re.compile(r'\[MEDIA\].*(\d+) grupos')
+RE_WORKERS  = re.compile(r'workers=(\d+)')
+RE_TOTAL    = re.compile(r'Carregados (\d+) temas de')
+RE_ARTIGO   = re.compile(r'^\[(\d+)/(\d+)\] ([^\[].{5,})')   # [01/10] Título sem prefixo extra
+RE_BRIEFING = re.compile(r'briefing \(')                       # CTX com briefing
+RE_HEAL     = re.compile(r'\[HEAL\] (tentativa|\d+x)')         # self-heal aplicado
+RE_SCORE    = re.compile(r'\[(\d+)/\d+\] ✓ Score:(\d+)/100.* (\d+)s')   # concluído
+RE_ERRO     = re.compile(r'\[(\d+)/\d+\] ✗ ERRO')
 RE_BATCH    = re.compile(r'Batch \d+ salvo em (.+)')
 RE_PUB      = re.compile(r'(▶ PUBLICANDO|PUBLICANDO RASCUNHOS)', re.IGNORECASE)
 RE_DONE     = re.compile(r'(GERAÇÃO COMPLETA|PIPELINE COMPLETO|TODOS OS BATCHES COMPLETOS)', re.IGNORECASE)
-RE_HEALING  = re.compile(r'\[HEAL\]')
-RE_BRIEFING = re.compile(r'\[BRIEFING\]')
-RE_IMG      = re.compile(r'\[IMG\] (Match encontrado|Sem imagem)')
-RE_INICIO   = re.compile(r'PIPELINE INICIADO: (.+)')
-RE_TOTAL    = re.compile(r'Carregados (\d+) temas de')
 
+# ── Cores ────────────────────────────────────────────────────────────────────
 CLEAR  = "\033[2J\033[H"
 BOLD   = "\033[1m"
 CYAN   = "\033[96m"
@@ -39,8 +39,7 @@ RESET  = "\033[0m"
 def bar(done, total, width=36):
     pct  = done / total if total else 0
     fill = int(pct * width)
-    b    = "█" * fill + "░" * (width - fill)
-    return f"{b} {done}/{total} ({pct*100:.0f}%)"
+    return f"{'█' * fill}{'░' * (width - fill)} {done}/{total} ({pct*100:.0f}%)"
 
 def eta_str(seconds):
     if seconds <= 0:
@@ -49,8 +48,8 @@ def eta_str(seconds):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--log",   default=LOG_PATH, help="Caminho do log")
-    parser.add_argument("--total", type=int, default=0, help="Total de artigos esperado (auto-detectado se 0)")
+    parser.add_argument("--log",   default=LOG_PATH)
+    parser.add_argument("--total", type=int, default=0)
     args = parser.parse_args()
 
     if not os.path.exists(args.log):
@@ -60,22 +59,20 @@ def main():
             time.sleep(1)
 
     state = {
-        "fase":           "aguardando",
-        "lote_atual":     "—",
-        "art_atual":      "",
-        "art_done":       0,
-        "art_total":      args.total,   # 0 = auto-detectar pelo log
-        "scores":         [],
-        "heals":          0,
-        "briefings":      0,
-        "img_match":      0,
-        "img_miss":       0,
-        "batches_done":   [],
-        "lotes_vistos":   [],
-        "inicio":         None,
-        "tempos":         deque(maxlen=10),
-        "ultimo_inicio":  None,
-        "pipeline_done":  False,
+        "fase":          "aguardando",
+        "lotes_vistos":  [],
+        "workers":       1,
+        "art_total":     args.total,
+        "art_done":      0,
+        "art_erros":     0,
+        "in_flight":     {},           # idx → tema (artigos na API agora)
+        "api_tempos":    deque(maxlen=20),
+        "scores":        [],
+        "heals":         0,
+        "briefings":     0,
+        "batches_done":  [],
+        "inicio":        None,
+        "pipeline_done": False,
     }
 
     pos = 0
@@ -95,55 +92,52 @@ def main():
                 state["inicio"] = agora
                 state["fase"]   = "iniciando"
 
-            # Auto-detecta total de artigos pelo log
+            m = RE_WORKERS.search(l)
+            if m:
+                state["workers"] = int(m.group(1))
+
             m = RE_TOTAL.search(l)
             if m and state["art_total"] == 0:
                 state["art_total"] = int(m.group(1))
 
-            # Detecta nome do lote genericamente
             m = RE_LOTE.search(l)
             if m:
                 nome = m.group(1).capitalize()
                 if nome not in state["lotes_vistos"]:
                     state["lotes_vistos"].append(nome)
-                state["lote_atual"] = nome
-                state["fase"]       = "gerando"
+                state["fase"] = "gerando"
 
             if RE_PUB.search(l):
-                state["fase"]       = "publicando"
-                state["lote_atual"] = "WordPress 📤"
+                state["fase"] = "publicando"
 
-            m = RE_GERANDO.search(l)
+            # Artigo inicia: [01/10] Título (linha sem outro prefixo entre colchetes)
+            m = RE_ARTIGO.search(l)
             if m:
-                n, total, tema = m.groups()
-                state["art_atual"]    = tema.strip()[:60]
-                state["ultimo_inicio"] = agora
-                # Atualiza total se vier do log e não foi configurado
+                idx, total, tema = m.group(1), m.group(2), m.group(3).strip()[:55]
+                state["in_flight"][idx] = tema
                 if state["art_total"] == 0:
                     state["art_total"] = int(total)
-
-            m = RE_SCORE.search(l)
-            if m:
-                score = int(m.group(2))
-                state["scores"].append(score)
-                state["art_done"] += 1
-                if state["ultimo_inicio"]:
-                    dt = (agora - state["ultimo_inicio"]).total_seconds()
-                    state["tempos"].append(dt)
-                    state["ultimo_inicio"] = None
-
-            if RE_HEALING.search(l):
-                state["heals"] += 1
 
             if RE_BRIEFING.search(l):
                 state["briefings"] += 1
 
-            m = RE_IMG.search(l)
+            if RE_HEAL.search(l):
+                state["heals"] += 1
+
+            # Artigo concluído: [01/10] ✓ Score:100/100 | ... | 87s
+            m = RE_SCORE.search(l)
             if m:
-                if "Match" in m.group(1):
-                    state["img_match"] += 1
-                else:
-                    state["img_miss"]  += 1
+                idx, score, secs = m.group(1), int(m.group(2)), int(m.group(3))
+                state["scores"].append(score)
+                state["art_done"] += 1
+                state["api_tempos"].append(secs)
+                state["in_flight"].pop(idx, None)
+
+            m = RE_ERRO.search(l)
+            if m:
+                state["in_flight"].pop(m.group(1), None)
+                state["art_erros"] += 1
+                state["art_done"]  += 1
 
             m = RE_BATCH.search(l)
             if m:
@@ -155,68 +149,66 @@ def main():
                 state["pipeline_done"] = True
                 state["fase"]          = "concluído ✅"
 
-        # ── Calcula métricas ────────────────────────────────────────
+        # ── Métricas ─────────────────────────────────────────────────────────
         done      = state["art_done"]
         total     = state["art_total"] if state["art_total"] > 0 else max(done, 1)
-        remaining = max(total - done, 0)
-        avg_tempo = (sum(state["tempos"]) / len(state["tempos"])) if state["tempos"] else 0
-        eta_s     = avg_tempo * remaining
+        in_flight = len(state["in_flight"])
+        remaining = max(total - done - in_flight, 0)
+        workers   = max(state["workers"], 1)
+        avg_tempo = sum(state["api_tempos"]) / len(state["api_tempos"]) if state["api_tempos"] else 0
+        eta_s     = (remaining / workers) * avg_tempo if avg_tempo else 0
         elapsed   = (agora - state["inicio"]).total_seconds() if state["inicio"] else 0
 
-        scores    = state["scores"]
-        avg_score = sum(scores) / len(scores) if scores else 0
-        min_score = min(scores) if scores else 0
-        max_score = max(scores) if scores else 0
+        scores      = state["scores"]
+        avg_score   = sum(scores) / len(scores) if scores else 0
+        min_score   = min(scores) if scores else 0
+        max_score   = max(scores) if scores else 0
         score_color = GREEN if avg_score >= 85 else YELLOW if avg_score >= 75 else RED
 
-        # ── Render ──────────────────────────────────────────────────
+        # ── Render ───────────────────────────────────────────────────────────
         sys.stdout.write(CLEAR)
         sys.stdout.write(f"{BOLD}{CYAN}╔══════════════════════════════════════════════════════╗{RESET}\n")
         sys.stdout.write(f"{BOLD}{CYAN}║     ORBIT AI — MONITOR DE PIPELINE  (Accesstage)    ║{RESET}\n")
         sys.stdout.write(f"{BOLD}{CYAN}╚══════════════════════════════════════════════════════╝{RESET}\n\n")
 
-        sys.stdout.write(f"  {BOLD}Fase:{RESET}      {state['fase'].upper()}\n")
-        lotes_str = " → ".join(state["lotes_vistos"]) if state["lotes_vistos"] else "—"
-        sys.stdout.write(f"  {BOLD}Lotes:{RESET}     {lotes_str}\n")
-        sys.stdout.write(f"  {BOLD}Início:{RESET}    {state['inicio'].strftime('%H:%M:%S') if state['inicio'] else '—'}")
+        lotes_str = " → ".join(state["lotes_vistos"]) or "—"
+        sys.stdout.write(f"  {BOLD}Fase:{RESET}    {state['fase'].upper()}   |   Lote: {lotes_str}   |   Workers: {workers}\n")
+        sys.stdout.write(f"  {BOLD}Início:{RESET}  {state['inicio'].strftime('%H:%M:%S') if state['inicio'] else '—'}")
         sys.stdout.write(f"   |   Decorrido: {BOLD}{eta_str(elapsed)}{RESET}\n\n")
 
-        sys.stdout.write(f"  {BOLD}Progresso geral{RESET}\n")
+        sys.stdout.write(f"  {BOLD}Progresso  {done}/{total} concluídos  +{in_flight} na API agora{RESET}\n")
         sys.stdout.write(f"  {bar(done, total)}\n\n")
 
-        # Tempo decorrido no artigo atual (mostra enquanto a API não responde)
-        api_wait = ""
-        if state["ultimo_inicio"]:
-            t_atual = (agora - state["ultimo_inicio"]).total_seconds()
-            api_wait = f"  {YELLOW}⏳ aguardando API há {t_atual:.0f}s{RESET}"
+        if state["in_flight"]:
+            sys.stdout.write(f"  {BOLD}Na API agora:{RESET}\n")
+            for idx, tema in sorted(state["in_flight"].items()):
+                sys.stdout.write(f"    {YELLOW}⏳ [{idx}] {tema}{RESET}\n")
+            sys.stdout.write("\n")
 
-        sys.stdout.write(f"  {BOLD}Artigo atual:{RESET} {DIM}{state['art_atual']}{RESET}\n")
-        sys.stdout.write(f"  {BOLD}ETA:{RESET}          {YELLOW}{eta_str(eta_s)}{RESET}")
+        sys.stdout.write(f"  {BOLD}ETA:{RESET}     {YELLOW}{eta_str(eta_s)}{RESET}")
         if avg_tempo:
-            sys.stdout.write(f"   {DIM}(~{avg_tempo:.0f}s por artigo){RESET}")
-        sys.stdout.write(f"{api_wait}\n\n")
+            sys.stdout.write(f"   {DIM}(~{avg_tempo:.0f}s/artigo · ~{avg_tempo/workers:.0f}s/rodada com {workers} workers){RESET}")
+        sys.stdout.write("\n\n")
 
-        sys.stdout.write(f"  {'─' * 54}\n")
-        sys.stdout.write(f"  {BOLD}Score QA médio:{RESET}  {score_color}{BOLD}{avg_score:.0f}/100{RESET}")
+        sys.stdout.write(f"  {'─'*54}\n")
+        sys.stdout.write(f"  {BOLD}Score QA:{RESET}     {score_color}{BOLD}{avg_score:.0f}/100{RESET}")
         if scores:
-            sys.stdout.write(f"   {DIM}min {min_score} · max {max_score} · {len(scores)} artigos{RESET}")
+            sys.stdout.write(f"   {DIM}min {min_score} · max {max_score} · {len(scores)} prontos{RESET}")
         sys.stdout.write("\n")
-        sys.stdout.write(f"  {BOLD}Self-healing:{RESET}    {state['heals']} correção(ões)\n")
-        sys.stdout.write(f"  {BOLD}Briefings:{RESET}       {state['briefings']} injetados\n")
-        imagens_str = f"{GREEN}{state['img_match']} matched{RESET}"
-        if state["img_miss"]:
-            imagens_str += f"   {YELLOW}{state['img_miss']} sem match{RESET}"
-        sys.stdout.write(f"  {BOLD}Imagens:{RESET}         {imagens_str}\n")
+        sys.stdout.write(f"  {BOLD}Self-healing:{RESET} {state['heals']} correção(ões)\n")
+        sys.stdout.write(f"  {BOLD}Briefings:{RESET}    {state['briefings']} injetados\n")
+        if state["art_erros"]:
+            sys.stdout.write(f"  {BOLD}Erros:{RESET}        {RED}{state['art_erros']}{RESET}\n")
 
         if state["batches_done"]:
-            sys.stdout.write(f"\n  {BOLD}CSVs gerados:{RESET}\n")
+            sys.stdout.write(f"\n  {BOLD}CSV gerado:{RESET}\n")
             for b in state["batches_done"]:
                 sys.stdout.write(f"    ✅ {b}\n")
 
         if state["pipeline_done"]:
-            sys.stdout.write(f"\n  {GREEN}{BOLD}🎉 GERAÇÃO COMPLETA! Artigos salvos em output/articles/{RESET}\n")
-            sys.stdout.write(f"  {DIM}Próximo passo: python3 engine/publisher.py --test_one{RESET}\n")
-            sys.stdout.write(f"  {DIM}Pressione Ctrl+C para sair.{RESET}\n")
+            sys.stdout.write(f"\n  {GREEN}{BOLD}🎉 GERAÇÃO COMPLETA! Artigos em output/articles/{RESET}\n")
+            sys.stdout.write(f"  {DIM}Próximo: python3 engine/publisher.py --test_one{RESET}\n")
+            sys.stdout.write(f"  {DIM}Ctrl+C para sair.{RESET}\n")
         else:
             sys.stdout.write(f"\n  {DIM}Atualiza a cada {REFRESH}s — Ctrl+C para sair{RESET}\n")
 
