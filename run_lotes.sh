@@ -27,17 +27,17 @@ echo "════════════════════════�
 echo "PIPELINE INICIADO: $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG"
 echo "════════════════════════════════════════" >> "$LOG"
 
-# ── Adicione um bloco por lote seguindo o padrão abaixo ──────────────────────
-# Exemplo: lote fintech
-# echo "" >> "$LOG"
-# echo "▶ LOTE FINTECH — $(date '+%H:%M:%S')" >> "$LOG"
-# python3 engine/content_engine.py \
-#   --model "$MODEL" \
-#   --wp_url "$WP_URL" --wp_user "$WP_USER" --wp_pass "$WP_PASS" \
-#   --csv_input "output/articles/lote_fintech_temas.csv" \
-#   2>&1 | tee -a "$LOG"
-# if [ ${PIPESTATUS[0]} -ne 0 ]; then echo "ERRO no lote fintech." >> "$LOG"; exit 1; fi
-# echo "✅ LOTE FINTECH CONCLUÍDO — $(date '+%H:%M:%S')" >> "$LOG"
+# ── LOTE VERAGI (10 temas — Plataforma Veragi, Crédito, Integrações, Cash Pooling) ──
+echo "" >> "$LOG"
+echo "▶ LOTE VERAGI — $(date '+%H:%M:%S')" >> "$LOG"
+python3 engine/content_engine.py \
+  --model "$MODEL" \
+  --csv_input "output/articles/lote_veragi_temas.csv" \
+  2>&1 | tee -a "$LOG"
+if [ ${PIPESTATUS[0]} -ne 0 ]; then echo "ERRO no lote Veragi." >> "$LOG"; exit 1; fi
+echo "✅ LOTE VERAGI CONCLUÍDO — $(date '+%H:%M:%S')" >> "$LOG"
+# ─────────────────────────────────────────────────────────────────────────────
+# Para adicionar novo lote: copie o bloco acima e ajuste o nome e o csv_input
 # ─────────────────────────────────────────────────────────────────────────────
 
 echo "" >> "$LOG"
