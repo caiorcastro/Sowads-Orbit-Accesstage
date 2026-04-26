@@ -45,10 +45,13 @@ tools/
   check_models.py     lista modelos OpenRouter
 
 config/
-  schema_orbit_ai_v1.json   regras técnicas SEO/AIO/HTML
+  schema_orbit_ai_v1.json   regras técnicas SEO/AIO/HTML (sem marca, sem produto)
 
 client/
-  diretrizes.md        compliance, produtos, tom, checklist Accesstage
+  briefing_cliente.md  briefing original enviado pela Accesstage (fonte primária)
+  guia_agente.md       tom, keywords obrigatórias, blacklist, argumentos por módulo
+  dossie_produtos.md   referência técnica completa de todos os módulos Veragi
+  diretrizes.md        guia operacional: compliance, SEO, checklist
   credentials.env      WP + redes sociais (gitignored)
 
 briefings/             pesquisas de mercado por vertical
@@ -128,9 +131,32 @@ python3 tools/bing_indexnow.py
 
 ---
 
-## 6. Sistema de Briefings
+## 6. Sistema de Contexto do Cliente
 
-Pasta `briefings/` — arquivos `.md` com dados de mercado injetados automaticamente no prompt.
+Dois blocos carregados automaticamente antes de cada geração:
+
+### `load_client_compliance()` — sempre injetado
+Lê `client/guia_agente.md` por inteiro. Traz tom, banco de keywords, blacklist e argumentos de venda.
+
+### `load_product_context(topic)` — seção relevante ao tema
+Lê `client/dossie_produtos.md` e extrai o módulo mais próximo do tema via matching de palavras-chave:
+
+| Seção | Keywords |
+|---|---|
+| Contas a Pagar (1.1) | contas a pagar, pagamento, comprovante, autorização |
+| Tesouraria (1.2) | tesouraria, extrato, saldo, multibanco, tarifas |
+| Crédito/Risco Sacado (1.3) | crédito, antecipação, recebíveis, risco sacado, capital de giro |
+| Analytics (1.4) | analytics, dados preditivos, relatório, dashboard |
+| Integrações (2.) | edi, api, open finance, van bancária, cnab |
+| Cash Pooling (3.) | cash pooling |
+
+Se nenhuma keyword bater, os primeiros 2000 chars do dossiê são injetados como fallback.
+
+---
+
+## 6b. Sistema de Briefings de Mercado
+
+Pasta `briefings/` — arquivos `.md` com dados de mercado externos injetados no prompt.
 
 **Formato obrigatório da primeira linha:**
 ```
@@ -242,9 +268,19 @@ python3 engine/qa_validator.py --path "output/articles/*.csv"
 
 ## 13. Documentos do cliente
 
-| Arquivo | Conteúdo |
-|---|---|
-| `client/diretrizes.md` | Guia operacional: compliance, termos proibidos, produtos Veragi, clusters SEO, checklist |
-| `client/credentials.env` | Credenciais WP + redes sociais (gitignored) |
+| Arquivo | Injetado no prompt? | Conteúdo |
+|---|---|---|
+| `client/briefing_cliente.md` | Não (referência) | Briefing original enviado pela Accesstage |
+| `client/guia_agente.md` | **Sim — sempre** (`load_client_compliance`) | Tom, keywords, blacklist, argumentos por módulo |
+| `client/dossie_produtos.md` | **Sim — trecho relevante** (`load_product_context`) | Módulos Veragi: Tesouraria, Contas a Pagar, Crédito, Analytics, Integrações, Cash Pooling |
+| `client/diretrizes.md` | Não (referência operacional) | Compliance, SEO, checklist |
+| `client/credentials.env` | Não | Credenciais WP + redes sociais (gitignored) |
 
-Mais documentos do cliente chegam em `client/` conforme o projeto evolui.
+## 14. Pendências do cliente
+
+| Item | Status |
+|---|---|
+| Documentação técnica oficial dos produtos (PDF/links) | A receber |
+| Restrições específicas de claims técnicos | A receber |
+| Campanhas ativas + calendário promocional | A receber |
+| Credenciais reais em `client/credentials.env` | A preencher |
