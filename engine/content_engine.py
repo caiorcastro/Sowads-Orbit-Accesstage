@@ -987,7 +987,8 @@ def main():
 
         # Salva batch em CSV (sem campos internos _*)
         input_stem     = os.path.splitext(os.path.basename(csv_path))[0].replace("_temas", "")
-        batch_filename = f"{input_stem}_batch{batch_num}_artigos_{start_idx+1}_a_{end_idx}.csv"
+        model_slug     = re.sub(r"[^a-z0-9]+", "-", args.model.split("/")[-1].lower())[:20].strip("-")
+        batch_filename = f"{input_stem}_{model_slug}_batch{batch_num}_artigos_{start_idx+1}_a_{end_idx}.csv"
         batch_path     = os.path.join(OUTPUT_DIR, batch_filename)
         csv_rows       = [{k: v for k, v in d.items() if not k.startswith('_')} for d in batch_data]
         pd.DataFrame(csv_rows).to_csv(batch_path, index=False, quoting=csv.QUOTE_ALL)

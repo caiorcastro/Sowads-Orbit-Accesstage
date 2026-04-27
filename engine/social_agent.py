@@ -142,6 +142,53 @@ def ensure_dirs():
         os.makedirs(os.path.join(OUTPUT_DIR, network), exist_ok=True)
 
 
+def slugify_title(title):
+    import unicodedata
+    text = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode()
+    text = re.sub(r"[^\w\s-]", "", text).strip().lower()
+    return re.sub(r"[\s_-]+", "-", text)[:80]
+
+
+def load_articles_from_csv(csv_path):
+    """Lê qualquer CSV de artigos (publicados ou não). Artigos sem wp_post_id recebem ID DRAFT."""
+    wp_base = os.environ.get("WORDPRESS_URL", "https://blog.accesstage.com.br").rstrip("/")
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception as exc:
+        raise FileNotFoundError(f"Não foi possível ler {csv_path}: {exc}")
+
+    articles = []
+    for idx, row in df.iterrows():
+        content = str(row.get("post_content", ""))
+        if len(content) < 100 or "ERRO" in content:
+            continue
+        wp_post_id = normalize_wp_post_id(row.get("wp_post_id")) or f"DRAFT-{idx+1}"
+        title = str(row.get("post_title", "")).strip()
+        slug = slugify_title(title)
+        url = f"{wp_base}/{slug}/" if slug else f"{wp_base}/?p={wp_post_id}"
+        articles.append({
+            "file": csv_path,
+            "file_idx": idx,
+            "unique_import_id": str(row.get("unique_import_id", "")).strip() or f"draft_{idx+1}",
+            "wp_post_id": wp_post_id,
+            "post_title": title,
+            "meta_title": str(row.get("meta_title", "")).strip(),
+            "meta_description": str(row.get("meta_description", "")).strip(),
+            "post_content": content,
+            "suggested_category": str(row.get("suggested_category", "")).strip(),
+            "qa_score": str(row.get("qa_score", "")).strip(),
+            "published_at": "",
+            "sort_value": str(idx),
+            "img_blog": str(row.get("img_blog", "")).strip(),
+            "img_linkedin": str(row.get("img_linkedin", "")).strip(),
+            "img_instagram": str(row.get("img_instagram", "")).strip(),
+            "img_facebook": str(row.get("img_facebook", "")).strip(),
+            "img_tiktok": str(row.get("img_tiktok", "")).strip(),
+            "url": url,
+        })
+    return articles
+
+
 def load_published_articles(csv_dir):
     files = sorted(glob.glob(os.path.join(csv_dir, "*.csv")))
     if not files:
@@ -659,6 +706,58 @@ def run(api_key, wp_url=DEFAULT_WP_URL, count=5, article_id=None, wp_post_id=Non
         log(Colors.OKGREEN, "EVENTS", f"CSV de eventos salvo em {events_path}")
 
 
+def run_from_csv(api_key, csv_path, delay=2):
+    """Gera copies + events CSV a partir de um arquivo CSV local (artigos publicados ou não)."""
+    ensure_dirs()
+    os.makedirs(EVENTS_DIR, exist_ok=True)
+    load_env_file()
+
+    articles = load_articles_from_csv(csv_path)
+    if not articles:
+        raise ValueError(f"Nenhum artigo válido encontrado em {csv_path}")
+
+    log(Colors.HEADER, "SOCIAL", f"[--from_csv] {len(articles)} artigo(s) de {csv_path}")
+    for a in articles:
+        log(Colors.OKCYAN, "POST", f"[{a['unique_import_id']}] wp={a['wp_post_id']} | {a['post_title']}")
+
+    history = load_cta_history()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    results = []
+
+    for idx, article in enumerate(articles):
+        if idx > 0 and delay > 0:
+            import time
+            time.sleep(delay)
+        unique_id = f"{article['unique_import_id']}__wp{article['wp_post_id']}"
+        recent_ctas = {network: get_recent_ctas(history, network) for network in NETWORKS}
+        try:
+            payload = generate_social_payload(api_key, article, recent_ctas)
+            validate_payload(payload, recent_ctas)
+            save_network_files(article, payload)
+            article["_payload"] = payload
+
+            for network in NETWORKS:
+                history.setdefault(network, []).append(payload[network]["cta"].strip())
+                history[network] = history[network][-20:]
+            save_cta_history(history)
+
+            log(Colors.OKGREEN, "OK", f"Copies salvos para {unique_id}")
+            results.append({"success": True, "unique_id": unique_id, "title": article["post_title"], "networks": list(NETWORKS.keys())})
+        except Exception as exc:
+            log(Colors.FAIL, "ERRO", f"{unique_id}: {exc}")
+            results.append({"success": False, "unique_id": unique_id, "title": article["post_title"], "networks": [], "error": str(exc)})
+
+    report_path = generate_report(results, timestamp)
+    log(Colors.OKGREEN, "REPORT", f"Relatório salvo em {report_path}")
+
+    org_id = os.environ.get("SOWADS_ORG_ID", "0-DUMMY-0")
+    successful_pairs = [(a, a["_payload"]) for a in articles if a.get("_payload")]
+    if successful_pairs:
+        events_path = build_events_csv(successful_pairs, org_id)
+        log(Colors.OKGREEN, "EVENTS", f"CSV de eventos salvo em {events_path}")
+    return results
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Orbit Social Agent - gera copies para LinkedIn, Instagram e Facebook."
@@ -669,17 +768,23 @@ def main():
     parser.add_argument("--article_id", help="Filtra por unique_import_id, ex: Orbit_27")
     parser.add_argument("--wp_post_id", help="Filtra por wp_post_id")
     parser.add_argument("--dry_run", action="store_true", help="Lista os artigos sem gerar copies.")
+    parser.add_argument("--from_csv", metavar="CSV_PATH",
+                        help="Gera copies + events a partir de um CSV local (sem precisar de wp_post_id).")
     args = parser.parse_args()
 
     api_key = load_api_key(args.api_key)
-    run(
-        api_key=api_key,
-        wp_url=args.wp_url,
-        count=args.count,
-        article_id=args.article_id,
-        wp_post_id=args.wp_post_id,
-        dry_run=args.dry_run,
-    )
+
+    if args.from_csv:
+        run_from_csv(api_key=api_key, csv_path=args.from_csv)
+    else:
+        run(
+            api_key=api_key,
+            wp_url=args.wp_url,
+            count=args.count,
+            article_id=args.article_id,
+            wp_post_id=args.wp_post_id,
+            dry_run=args.dry_run,
+        )
 
 
 if __name__ == "__main__":
