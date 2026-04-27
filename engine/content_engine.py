@@ -36,6 +36,26 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_SITE = "https://sowads.com.br"
 OPENROUTER_APP  = "Sowads Orbit AI Content Engine"
 
+# Preços por M tokens (input, output) — atualizar conforme OpenRouter
+MODEL_PRICING = {
+    "google/gemini-2.5-flash":        (0.30,  2.50),
+    "google/gemini-2.5-flash-lite":   (0.10,  0.40),
+    "google/gemini-2.0-flash-001":    (0.10,  0.40),
+    "anthropic/claude-opus-4.7":      (15.00, 75.00),
+    "anthropic/claude-opus-4.6":      (15.00, 75.00),
+    "anthropic/claude-sonnet-4.6":    (3.00,  15.00),
+    "deepseek/deepseek-v4-pro":       (0.44,  0.87),
+    "deepseek/deepseek-chat-v3-0324": (0.20,  0.77),
+}
+_DEFAULT_PRICING = (1.00, 5.00)
+
+def calc_cost(model: str, tok_in, tok_out) -> float:
+    price_in, price_out = MODEL_PRICING.get(model, _DEFAULT_PRICING)
+    try:
+        return (int(tok_in) / 1_000_000 * price_in) + (int(tok_out) / 1_000_000 * price_out)
+    except Exception:
+        return 0.0
+
 # ANSI Colors
 class Colors:
     HEADER  = '\033[95m'
@@ -115,11 +135,11 @@ def call_openrouter(prompt, api_key, model, fallback_model=None, temperature=0.7
             raise RuntimeError("Thread terminou sem resultado")
 
         text, usage = result[0]
-        tok_in  = usage.get("prompt_tokens", "?")
-        tok_out = usage.get("completion_tokens", "?")
+        tok_in  = usage.get("prompt_tokens", 0)
+        tok_out = usage.get("completion_tokens", 0)
         suffix  = " (fallback)" if mdl != model else ""
         tprint(f"  {Colors.OKGREEN}{pfx}[API←]{suffix} {elapsed:.1f}s | {len(text):,} chars | tokens entrada:{tok_in} saída:{tok_out}{Colors.ENDC}")
-        return text, mdl
+        return text, mdl, {"tok_in": tok_in, "tok_out": tok_out, "elapsed_api": elapsed}
 
     def _call(mdl, attempt=1):
         t0 = time.time()
@@ -511,7 +531,7 @@ def self_heal(api_key, model, fallback_model, content, topic, validator, pfx="")
         {content}
         """
         try:
-            response_text, used_model = call_openrouter(fix_prompt, api_key, model, fallback_model, pfx=pfx)
+            response_text, used_model, _ = call_openrouter(fix_prompt, api_key, model, fallback_model, pfx=pfx)
             new_content, _, _ = parse_response(response_text)
             if not new_content:
                 new_content = content
@@ -646,86 +666,130 @@ def generate_report(batch_data, batch_num, model_name, timestamp):
     lines.append(f"| Prontos para WordPress | {sum(1 for s in scores if s >= MIN_SCORE)} de {total} {'✅' if all_ok else '⚠️'} |")
     lines.append("")
 
+    # Métricas de custo/velocidade
+    costs    = [d.get('cost_usd', 0) for d in batch_data]
+    elapsed_list = [d.get('elapsed_s', 0) for d in batch_data]
+    toks_in  = [d.get('tok_in', 0) for d in batch_data]
+    toks_out = [d.get('tok_out', 0) for d in batch_data]
+    total_cost    = sum(c for c in costs if isinstance(c, (int, float)))
+    avg_elapsed   = sum(elapsed_list) / total if total > 0 else 0
+    total_tok_in  = sum(t for t in toks_in if isinstance(t, int))
+    total_tok_out = sum(t for t in toks_out if isinstance(t, int))
+
+    lines.append("---\n")
+    lines.append("## Resumo de Custo e Velocidade\n")
+    lines.append("| Métrica | Valor |")
+    lines.append("|---|---|")
+    lines.append(f"| Modelo principal | `{model_name}` |")
+    lines.append(f"| Custo total do lote | U${total_cost:.4f} (≈ R${total_cost*5:.2f}) |")
+    lines.append(f"| Custo médio por artigo | U${total_cost/total:.5f} (≈ R${total_cost/total*5:.3f}) |")
+    lines.append(f"| Projeção 100 artigos | U${total_cost/total*100:.2f} (≈ R${total_cost/total*500:.2f}) |")
+    lines.append(f"| Velocidade média | {avg_elapsed:.0f}s por artigo |")
+    lines.append(f"| Tokens de entrada (total) | {total_tok_in:,} |")
+    lines.append(f"| Tokens de saída (total) | {total_tok_out:,} |")
+    lines.append("")
+
     lines.append("---\n")
     lines.append("## Nota Individual por Artigo\n")
-    lines.append("| # | Título | Score | Retries | Modelo | Briefing | Status |")
-    lines.append("|---|---|---|---|---|---|---|")
+    lines.append("| # | Título | QA | Tempo | Custo | Tokens (in/out) | Self-heal | Status |")
+    lines.append("|---|---|---|---|---|---|---|---|")
     for i, d in enumerate(batch_data):
-        title    = d.get('post_title', 'N/A')[:50]
+        title    = d.get('post_title', 'N/A')[:45]
         score    = d.get('qa_score', 0)
         retries  = d.get('heal_retries', 0)
-        model_u  = d.get('_model_used', model_name).split('/')[-1]
-        briefing = "✅" if d.get('_briefing_injected') else "—"
+        el       = d.get('elapsed_s', 0)
+        cost_a   = d.get('cost_usd', 0)
+        ti       = d.get('tok_in', '—')
+        to       = d.get('tok_out', '—')
         status   = "✅ Aprovado" if score >= MIN_SCORE else "❌ Precisa revisão"
-        lines.append(f"| {i+1} | {title} | {score}/100 | {retries} | {model_u} | {briefing} | {status} |")
+        heal     = "✅ 1ª tentativa" if retries == 0 else f"⚠️ {retries}x corrigido"
+        lines.append(f"| {i+1} | {title} | {score}/100 | {el:.0f}s | U${cost_a:.5f} | {ti}/{to} | {heal} | {status} |")
     lines.append("")
 
     for i, d in enumerate(batch_data):
         a = d.get('_analysis', {})
         lines.append("---\n")
-        lines.append(f"## Detalhamento — Artigo {i+1}: {d.get('post_title', 'N/A')}\n")
+        lines.append(f"## Artigo {i+1}: {d.get('post_title', 'N/A')}\n")
 
-        lines.append("### Metadados")
-        lines.append("| Campo | Valor | Limite | OK? |")
+        lines.append("### Metadados SEO")
+        lines.append("| Campo | Valor | Limite | Status |")
         lines.append("|---|---|---|---|")
-        mt_ok = "✅" if a.get('meta_title_len', 0) <= 60 else "❌"
-        md_ok = "✅" if a.get('meta_desc_len', 0) <= 155 else "❌"
-        h1_ok = "✅" if a.get('h1_len', 0) <= 60 else "❌"
-        wc    = a.get('word_count', 0)
-        wc_ok = "✅" if 1200 <= wc <= 2500 else "⚠️"
-        lines.append(f"| Meta Title | \"{d.get('meta_title', 'N/A')[:50]}\" | ≤60 chars | {mt_ok} {a.get('meta_title_len', 0)} chars |")
-        lines.append(f"| Meta Description | \"{d.get('meta_description', 'N/A')[:50]}\" | ≤155 chars | {md_ok} {a.get('meta_desc_len', 0)} chars |")
-        lines.append(f"| H1 | \"{a.get('h1', 'N/A')[:50]}\" | ≤60 chars | {h1_ok} {a.get('h1_len', 0)} chars |")
-        lines.append(f"| Word Count | {wc:,} palavras | 1200-2500 | {wc_ok} |")
+        mt_len = a.get('meta_title_len', 0)
+        md_len = a.get('meta_desc_len', 0)
+        wc     = a.get('word_count', 0)
+        mt_ok  = "✅" if mt_len <= 60 else "⚠️ acima de 60"
+        md_ok  = "✅" if md_len <= 155 else "⚠️ acima de 155"
+        wc_ok  = "✅" if 1200 <= wc <= 2500 else ("⚠️ abaixo do ideal" if wc < 1200 else "⚠️ acima do limite")
+        lines.append(f"| Meta Title | \"{d.get('meta_title', 'N/A')[:55]}\" | ≤60 chars | {mt_ok} ({mt_len} chars) |")
+        lines.append(f"| Meta Description | \"{d.get('meta_description', 'N/A')[:55]}\" | ≤155 chars | {md_ok} ({md_len} chars) |")
+        lines.append(f"| Contagem de palavras | {wc:,} palavras | 1.200–2.500 | {wc_ok} |")
         lines.append("")
 
-        lines.append(f"### Checklist de Qualidade (Score: {d.get('qa_score', 0)}/100)")
-        lines.append("| Verificação | Resultado |")
-        lines.append("|---|---|")
+        lines.append("### Checklist WordPress (estrutura HTML)")
+        lines.append("| Verificação | Resultado | Obs |")
+        lines.append("|---|---|---|")
         has_article_tag = '<article lang="pt-BR">' in str(d.get('post_content', ''))
-        lines.append(f"| `<article lang=\"pt-BR\">` | {'✅' if has_article_tag else '❌'} |")
-        lines.append(f"| `<h1>` único | {'✅' if a.get('h1') != 'N/A' else '❌'} |")
-        lines.append(f"| `<section class=\"faq-section\">` | {'✅' if a.get('has_faq_html') else '❌'} |")
-        lines.append(f"| JSON-LD FAQPage | {'✅' if a.get('has_jsonld') else '❌'} |")
-        lines.append(f"| Zero links `<a href>` | {'✅' if not re.search(r'<a href=', str(d.get('post_content', ''))) else '❌'} |")
-        lines.append(f"| Tabela HTML | {'✅' if a.get('has_table') else '❌'} |")
-        lines.append(f"| Mínimo 3 H3 | {'✅' if a.get('h3_count', 0) >= 3 else '❌ ' + str(a.get('h3_count', 0))} |")
-        lines.append(f"| FAQ (≥5 perguntas) | {'✅ ' + str(a.get('faq_count', 0)) if a.get('faq_count', 0) >= 5 else '❌ ' + str(a.get('faq_count', 0))} |")
+        has_h1_in_body  = bool(re.search(r'<h1[\s>]', str(d.get('post_content', ''))))
+        has_links       = bool(re.search(r'<a href=', str(d.get('post_content', ''))))
+        has_jsonld      = a.get('has_jsonld', False)
+        faq_count       = a.get('faq_count', 0)
+        lines.append(f"| Wrapper `<article lang=\"pt-BR\">` | {'✅ Presente' if has_article_tag else '❌ Ausente'} | Necessário para semântica HTML5 |")
+        lines.append(f"| H1 ausente no corpo | {'✅ Correto' if not has_h1_in_body else '❌ H1 encontrado no corpo'} | WP usa o título do post como H1 da página |")
+        lines.append(f"| Zero hyperlinks no conteúdo | {'✅ Correto' if not has_links else '❌ Links detectados'} | Invariante do projeto — nenhum link no corpo |")
+        lines.append(f"| JSON-LD FAQPage ausente | {'✅ Correto' if not has_jsonld else '⚠️ JSON-LD detectado'} | Proibido — WP trata isso via plugin |")
+        lines.append(f"| FAQ com ≥5 perguntas | {'✅ ' + str(faq_count) + ' perguntas' if faq_count >= 5 else '❌ Apenas ' + str(faq_count)} | Necessário para rich snippet |")
+        lines.append(f"| Tabela HTML | {'✅ Presente' if a.get('has_table') else '—'} | Recomendado para scannability |")
         issues = d.get('_issues', [])
-        lines.append(f"| **Issues** | {', '.join(issues) if issues else 'Nenhum ✅'} |")
+        lines.append(f"| Issues detectados pelo QA | {', '.join(issues) if issues else '✅ Nenhum'} | — |")
         lines.append("")
 
-        lines.append("### Análise SEO")
-        lines.append("| Métrica | Valor |")
-        lines.append("|---|---|")
-        lines.append(f"| Keyword primária | \"{a.get('primary_keywords', 'N/A')}\" |")
-        density    = a.get('keyword_density', 0)
-        density_ok = "✅" if 0.5 <= density <= 4.0 else "⚠️"
-        lines.append(f"| Densidade da keyword | {density}% {density_ok} |")
-        lines.append(f"| Hierarquia headings | H1(1) → H2({a.get('h2_count', 0)}) → H3({a.get('h3_count', 0)}) |")
-        lines.append(f"| Entidades detectadas ({a.get('entity_count', 0)}) | {', '.join(a.get('entities', []))} |")
-        lines.append(f"| Abertura | {a.get('opening_type', 'N/A')} |")
+        lines.append("### Estrutura e SEO semântico")
+        lines.append("| Métrica | Valor | Status |")
+        lines.append("|---|---|---|")
+        h2c = a.get('h2_count', 0)
+        h3c = a.get('h3_count', 0)
+        lines.append(f"| Hierarquia de headings | H2: {h2c} seções · H3: {h3c} subtópicos | {'✅' if h2c >= 3 and h3c >= 3 else '⚠️ verificar'} |")
+        kw = a.get('primary_keywords', '')
+        if kw and kw not in ('N/A', ''):
+            density = a.get('keyword_density', 0)
+            d_ok = "✅" if 0.5 <= density <= 4.0 else "⚠️ fora do range ideal (0.5–4%)"
+            lines.append(f"| Keyword primária | {kw} | {density}% densidade — {d_ok} |")
+        else:
+            lines.append(f"| Keyword primária | — não informada no CSV | Adicione a coluna `keyword` ao CSV de temas para medir densidade |")
+        lines.append(f"| Entidades semânticas ({a.get('entity_count', 0)}) | {', '.join(a.get('entities', []))} | Presença de entidades B2B relevantes |")
+        lines.append(f"| Tipo de abertura | {a.get('opening_type', 'N/A')} | — |")
         lines.append("")
 
-        retries  = d.get('heal_retries', 0)
-        model_u  = d.get('_model_used', model_name)
-        briefing = d.get('_briefing_injected', False)
-        lines.append("### Geração")
-        lines.append("| Campo | Valor |")
-        lines.append("|---|---|")
-        lines.append(f"| Modelo usado | `{model_u}` |")
-        lines.append(f"| Briefing injetado | {'✅ Sim' if briefing else '— Não'} |")
-        lines.append(f"| Self-healing | {'Aprovado de primeira ✅' if retries == 0 else str(retries) + ' correção(ões) aplicadas'} |")
+        retries = d.get('heal_retries', 0)
+        model_u = d.get('_model_used', model_name)
+        has_bfg = d.get('_briefing_injected', False)
+        bfg_vert = d.get('_briefing_vertical', '')
+        el_a    = d.get('elapsed_s', 0)
+        cost_a  = d.get('cost_usd', 0)
+        ti_a    = d.get('tok_in', '—')
+        to_a    = d.get('tok_out', '—')
+        lines.append("### Contexto injetado e dados de geração")
+        lines.append("| Campo | Valor | Obs |")
+        lines.append("|---|---|---|")
+        lines.append(f"| Modelo | `{model_u}` | — |")
+        lines.append(f"| Guia do agente (client/guia_agente.md) | ✅ Injetado | Tom, keywords, blacklist, argumentos por módulo |")
+        lines.append(f"| Contexto do produto (client/dossie_produtos.md) | ✅ Injetado | Seção Veragi detectada pelo tema |")
+        lines.append(f"| Briefing de vertical (briefings/) | {'✅ ' + bfg_vert[:40] if has_bfg else '— não configurado'} | Dados de mercado externos (opcional) |")
+        lines.append(f"| Self-healing | {'✅ Aprovado na 1ª tentativa' if retries == 0 else f'⚠️ {retries}x reprocessado automaticamente'} | — |")
+        lines.append(f"| Tempo de geração | {el_a:.0f}s | — |")
+        lines.append(f"| Tokens entrada / saída | {ti_a} / {to_a} | — |")
+        lines.append(f"| Custo por artigo | U${cost_a:.5f} (≈ R${cost_a*5:.4f}) | — |")
         lines.append("")
 
     lines.append("---\n")
     if all_ok:
-        lines.append(f"## ✅ Status Final: PRONTO PARA PRODUÇÃO")
-        lines.append(f"Todos os {total} artigos atingiram score ≥{MIN_SCORE}.")
+        lines.append(f"## ✅ Status Final: PRONTO PARA PUBLICAÇÃO")
+        lines.append(f"Todos os {total} artigos aprovados com score ≥{MIN_SCORE}/100.")
+        lines.append(f"\n> **Próximo passo:** `python3 tools/preview_generator.py` para gerar o mockup → revisar → `python3 engine/publisher.py --test_one`")
     else:
         failed = sum(1 for s in scores if s < MIN_SCORE)
         lines.append(f"## ⚠️ Status Final: {failed} ARTIGO(S) PRECISAM REVISÃO MANUAL")
-    lines.append(f"\nArquivos: `{OUTPUT_DIR}/lote_{batch_num}_*.csv`")
+    lines.append(f"\n**Arquivo de artigos:** `output/articles/`")
 
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines))
@@ -883,7 +947,7 @@ def main():
 
                 # 2. Prompt + API
                 prompt = generate_prompt(topic, rules, briefing=briefing)
-                response_text, used_model = call_openrouter(
+                response_text, used_model, api_stats = call_openrouter(
                     prompt, api_key, args.model, args.fallback_model, pfx=pfx
                 )
 
@@ -929,9 +993,12 @@ def main():
 
                 # 8. Resumo
                 elapsed     = time.time() - art_t0
+                tok_in      = api_stats.get("tok_in", 0)
+                tok_out     = api_stats.get("tok_out", 0)
+                cost        = calc_cost(used_model, tok_in, tok_out)
                 score_color = Colors.OKGREEN if final_score >= MIN_SCORE else Colors.WARNING
                 extras      = (f" | {retries}x heal" if retries > 0 else "") + (" | briefing" if briefing else "")
-                tprint(f"  {score_color}{pfx} ✓ Score:{final_score}/100{extras} | {elapsed:.0f}s{Colors.ENDC}")
+                tprint(f"  {score_color}{pfx} ✓ Score:{final_score}/100{extras} | {elapsed:.0f}s | U${cost:.5f}{Colors.ENDC}")
 
                 return {
                     '_idx':              global_idx,
@@ -947,6 +1014,10 @@ def main():
                     'original_theme':    topic,
                     'qa_score':          final_score,
                     'heal_retries':      retries,
+                    'tok_in':            tok_in,
+                    'tok_out':           tok_out,
+                    'elapsed_s':         round(elapsed, 1),
+                    'cost_usd':          round(cost, 6),
                     'suggested_category': topic_categories.get(topic, cat_suggestion),
                     'img_blog':          images.get('blog', ''),
                     'img_linkedin':      images.get('linkedin', ''),
@@ -957,6 +1028,7 @@ def main():
                     '_issues':           list(issues),
                     '_model_used':       used_model,
                     '_briefing_injected': bool(briefing),
+                    '_briefing_vertical': briefing[:60] if briefing else "",
                 }
 
             except Exception as e:
