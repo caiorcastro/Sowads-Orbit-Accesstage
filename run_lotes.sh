@@ -6,7 +6,9 @@ LOG_DIR="$BASE_DIR/output/reports"
 LOG="$LOG_DIR/run_pipeline.log"
 mkdir -p "$LOG_DIR"
 
-MODEL="deepseek/deepseek-v4-pro"
+MODEL="google/gemini-2.5-flash"
+FALLBACK_MODEL="google/gemini-2.5-flash-lite"
+# Para qualidade máxima (mais lento): MODEL="deepseek/deepseek-v4-pro"
 
 cd "$BASE_DIR"
 
@@ -32,6 +34,7 @@ echo "" >> "$LOG"
 echo "▶ LOTE VERAGI — $(date '+%H:%M:%S')" >> "$LOG"
 python3 engine/content_engine.py \
   --model "$MODEL" \
+  --fallback_model "$FALLBACK_MODEL" \
   --csv_input "output/articles/lote_veragi_temas.csv" \
   2>&1 | tee -a "$LOG"
 if [ ${PIPESTATUS[0]} -ne 0 ]; then echo "ERRO no lote Veragi." >> "$LOG"; exit 1; fi

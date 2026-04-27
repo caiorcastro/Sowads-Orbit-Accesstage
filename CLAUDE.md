@@ -23,6 +23,8 @@ tools/           ← utilitários
   optimizer.py        otimização AIO em lote
   bing_indexnow.py    push IndexNow para Bing
   check_models.py     lista modelos disponíveis
+  preview_generator.py  gera HTML mock do blog p/ aprovação do cliente
+  merge_retry.py      mescla CSV de retry no batch principal
 
 config/          ← regras técnicas de SEO/AIO/estrutura HTML (sem marca, sem cliente)
   schema_orbit_ai_v1.json   SEO técnico puro — Sowads/produtos removidos
@@ -36,10 +38,11 @@ client/          ← documentos do cliente (versionados, exceto credentials)
 
 briefings/       ← pesquisas de mercado por vertical (injetadas no prompt)
 output/          ← tudo que sai (gitignored)
-  articles/      CSVs de artigos gerados
+  articles/      CSVs de artigos gerados + CSVs de retry
   social/        TXTs de copies por rede
   events/        CSVs de eventos para backend Sowads
   reports/       relatórios + media_index.json
+  preview/       HTML mock do blog para aprovação (index.html + artigos)
 ```
 
 ## Provedor de IA — REGRA FIXA
@@ -47,10 +50,30 @@ output/          ← tudo que sai (gitignored)
 **Sempre OpenRouter. Nunca outra API sem aprovação explícita.**
 
 ```
-Endpoint : https://openrouter.ai/api/v1/chat/completions
-Modelo   : deepseek/deepseek-v4-pro
-Chave    : OPENROUTER_API_KEY no .env
+Endpoint       : https://openrouter.ai/api/v1/chat/completions
+Chave          : OPENROUTER_API_KEY no .env
+
+Modelo padrão  : google/gemini-2.5-flash       (~15s/artigo, $0.30/$2.50 por M tokens)
+Fallback padrão: google/gemini-2.5-flash-lite   (~8s/artigo,  $0.10/$0.40 por M tokens)
+Qualidade max  : anthropic/claude-opus-4.7       (~40s/artigo — usar apenas com --model explícito)
 ```
+
+### Comparativo de modelos testados (benchmark Sowads Orbit × Accesstage, abr/2026)
+
+| Modelo | Vel. média | Input/M | Output/M | Notas |
+|---|---|---|---|---|
+| `google/gemini-2.5-flash` | ~15s | $0.30 | $2.50 | Padrão — rápido, score 100 |
+| `google/gemini-2.5-flash-lite` | ~8s | $0.10 | $0.40 | Volume alto, muito barato |
+| `anthropic/claude-opus-4.7` | ~40s | $15.00 | $75.00 | Qualidade editorial máxima, 100/100 QA; custo alto para lote |
+| `deepseek/deepseek-v4-pro` | ~170s | $0.44 | $0.87 | Qualidade alta, lento, risco de hang |
+| `deepseek/deepseek-chat-v3-0324` | ~40s | $0.20 | $0.77 | Custo-benefício DeepSeek |
+
+**Aviso de timeout:** DeepSeek usa streaming chunked — o `timeout=90` do requests não funciona.
+O engine usa wall-clock thread de 240s como hard limit. Não reduzir esse valor.
+
+### Benchmark completo — 25 modelos auditados
+Relatório de auditoria semântica gerado em `tools/auditor.py` (avaliador: `google/gemini-2.5-pro`).
+Relatório publicado: https://caiorcastro.github.io/orbit-audit-accesstage-abr26/
 
 ## Sistema de Contexto do Cliente
 

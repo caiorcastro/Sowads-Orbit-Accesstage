@@ -59,7 +59,9 @@ def tprint(*args, **kwargs):
 # OpenRouter — chamada de API
 # ─────────────────────────────────────────────
 
-def call_openrouter(prompt, api_key, model, fallback_model=None, temperature=0.7, max_tokens=8000, pfx=""):
+MAX_API_WALL_SECS = 240   # hard limit total por chamada (inclui streaming lento)
+
+def call_openrouter(prompt, api_key, model, fallback_model=None, temperature=0.7, max_tokens=8000, pfx="", api_retries=3):
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": OPENROUTER_SITE,
@@ -76,37 +78,68 @@ def call_openrouter(prompt, api_key, model, fallback_model=None, temperature=0.7
     prompt_tokens_est = len(prompt) // 4
     tprint(f"  {Colors.OKCYAN}{pfx}[API→] {model.split('/')[-1]} | ~{len(prompt):,} chars prompt (~{prompt_tokens_est:,} tokens){Colors.ENDC}")
 
-    t0 = time.time()
-    try:
-        resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=90)
-        resp.raise_for_status()
-        data    = resp.json()
-        text    = data["choices"][0]["message"]["content"]
+    def _call_with_wallclock(mdl):
+        """Executa a chamada HTTP em thread separada com hard timeout wall-clock."""
+        result = [None]
+        error  = [None]
+
+        def do_request():
+            try:
+                # timeout=(connect, read-per-chunk) — proteção contra servidor morto
+                resp = requests.post(
+                    OPENROUTER_URL, headers=headers,
+                    json={**payload, "model": mdl},
+                    timeout=(10, 90)
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                if "choices" not in data or not data["choices"]:
+                    err_msg = data.get("error", {}).get("message", str(data)[:120])
+                    error[0] = ValueError(f"Resposta sem 'choices': {err_msg}")
+                    return
+                result[0] = (data["choices"][0]["message"]["content"], data.get("usage", {}))
+            except Exception as e:
+                error[0] = e
+
+        t = threading.Thread(target=do_request, daemon=True)
+        t0 = time.time()
+        t.start()
+        t.join(timeout=MAX_API_WALL_SECS)
+
         elapsed = time.time() - t0
-        usage   = data.get("usage", {})
+        if t.is_alive():
+            raise TimeoutError(f"Wall-clock limit de {MAX_API_WALL_SECS}s atingido (thread ainda ativa)")
+        if error[0]:
+            raise error[0]
+        if result[0] is None:
+            raise RuntimeError("Thread terminou sem resultado")
+
+        text, usage = result[0]
         tok_in  = usage.get("prompt_tokens", "?")
         tok_out = usage.get("completion_tokens", "?")
-        tprint(f"  {Colors.OKGREEN}{pfx}[API←] {elapsed:.1f}s | {len(text):,} chars | tokens entrada:{tok_in} saída:{tok_out}{Colors.ENDC}")
-        return text, model
+        suffix  = " (fallback)" if mdl != model else ""
+        tprint(f"  {Colors.OKGREEN}{pfx}[API←]{suffix} {elapsed:.1f}s | {len(text):,} chars | tokens entrada:{tok_in} saída:{tok_out}{Colors.ENDC}")
+        return text, mdl
+
+    def _call(mdl, attempt=1):
+        t0 = time.time()
+        try:
+            return _call_with_wallclock(mdl)
+        except Exception as e:
+            elapsed = time.time() - t0
+            if attempt < api_retries:
+                wait = 20 * attempt
+                tprint(f"  {Colors.WARNING}{pfx}[API] Tentativa {attempt}/{api_retries} falhou em {elapsed:.0f}s ({type(e).__name__}: {str(e)[:80]}). Aguardando {wait}s...{Colors.ENDC}")
+                time.sleep(wait)
+                return _call(mdl, attempt + 1)
+            raise
+
+    try:
+        return _call(model)
     except Exception as e:
-        elapsed = time.time() - t0
         if fallback_model:
-            tprint(f"  {Colors.WARNING}{pfx}[API] Falha em {elapsed:.1f}s ({type(e).__name__}). Fallback: {fallback_model}{Colors.ENDC}")
-            payload["model"] = fallback_model
-            t0 = time.time()
-            try:
-                resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=90)
-                resp.raise_for_status()
-                data    = resp.json()
-                text    = data["choices"][0]["message"]["content"]
-                elapsed = time.time() - t0
-                usage   = data.get("usage", {})
-                tok_in  = usage.get("prompt_tokens", "?")
-                tok_out = usage.get("completion_tokens", "?")
-                tprint(f"  {Colors.OKGREEN}{pfx}[API←] fallback {elapsed:.1f}s | {len(text):,} chars | tokens:{tok_in}→{tok_out}{Colors.ENDC}")
-                return text, fallback_model
-            except Exception as e2:
-                raise RuntimeError(f"Falha primário e fallback: {e} | {e2}")
+            tprint(f"  {Colors.WARNING}{pfx}[API] Todas tentativas com {model.split('/')[-1]} falharam. Fallback: {fallback_model}{Colors.ENDC}")
+            return _call(fallback_model)
         raise
 
 
@@ -372,6 +405,15 @@ def generate_prompt(topic, rules_json, briefing=None):
     QUALIDADE:
     - {quality.get('readability_targets', {}).get('rule', '')}
     - CTA final: convite consultivo e natural para conhecer a Accesstage e a Plataforma Veragi. Sem linguagem de vendas forçada.
+
+    ANTI-CACOETES DE IA — ESTILO OBRIGATÓRIO:
+    - PROIBIDO usar travessão (—) como recurso estilístico recorrente
+    - PROIBIDO iniciar parágrafos com: "No entanto,", "Além disso,", "Portanto,", "Vale ressaltar que", "É importante destacar", "Em suma,", "Isso posto,", "Nesse sentido,", "Sendo assim,"
+    - PROIBIDO aberturas genéricas: "Neste artigo, vamos explorar...", "Neste conteúdo, abordaremos...", "Ao longo deste texto..."
+    - Varie o comprimento das frases — misture curtas e longas naturalmente
+    - Use voz ativa preferencialmente
+    - Conclua seções com argumento concreto, não com resumo do que acabou de ser dito
+    - Escreva como um especialista humano escreveria: direto, específico, sem floreios artificiais
 
     ESTILO DO FAQ (OBRIGATÓRIO — sem script, sem JSON-LD):
     <section class="faq-section" style="background:#f8f9fa;border:1px solid #e2e2e2;border-radius:8px;padding:24px 28px;margin-top:32px;font-size:0.92em;line-height:1.6">
@@ -728,8 +770,8 @@ def main():
     parser = argparse.ArgumentParser(description="Orbit AI Content Engine — OpenRouter + Briefings")
     parser.add_argument("--openrouter_key", default=os.environ.get("OPENROUTER_API_KEY"), help="Chave OpenRouter")
     parser.add_argument("--api_key",        default=None, help="Alias para --openrouter_key (compatibilidade)")
-    parser.add_argument("--model",          default="deepseek/deepseek-v4-pro", help="Modelo primário OpenRouter")
-    parser.add_argument("--fallback_model", default=None, help="Modelo fallback OpenRouter (opcional)")
+    parser.add_argument("--model",          default="google/gemini-2.5-flash", help="Modelo primário OpenRouter")
+    parser.add_argument("--fallback_model", default="google/gemini-2.5-flash-lite", help="Modelo fallback OpenRouter")
     parser.add_argument("--csv_input",      default=None, help="Caminho para CSV com temas")
     parser.add_argument("--start_batch",    type=int, default=1, help="Iniciar a partir deste batch")
     parser.add_argument("--max_batches",    type=int, default=None, help="Número máximo de batches")
