@@ -73,7 +73,9 @@ O engine usa wall-clock thread de 240s como hard limit. Não reduzir esse valor.
 
 ### Benchmark completo — 25 modelos auditados
 Relatório de auditoria semântica gerado em `tools/auditor.py` (avaliador: `google/gemini-2.5-pro`).
-Relatório publicado: https://caiorcastro.github.io/orbit-audit-accesstage-abr26/
+Relatório publicado (noindex): https://caiorcastro.github.io/orbit-audit-accesstage-abr26/
+10 artigos de prova reais com opus 4.7 — todos 100/100 QA: `output/articles/lote_veragi_claude-opus-4-7_batch1_artigos_1_a_10.csv`
+Preview dos artigos (noindex): https://sowads-orbit.web.app
 
 ## Sistema de Contexto do Cliente
 
@@ -101,11 +103,13 @@ Para adicionar novo produto: atualizar `dossie_produtos.md` + acrescentar entry 
 ## Pipeline — passo a passo
 
 ```bash
-# 1. GERAR artigos (nunca publica automaticamente)
+# 1. GERAR artigos + copies sociais + events CSV (tudo de uma vez)
 ./run_lotes.sh
+# run_lotes.sh já chama social_agent --from_csv automaticamente ao final
 
-# 2. GERAR copies sociais + events CSV
-python3 engine/social_agent.py --count 40
+# 2. GERAR copies/events manualmente (caso queira rodar separado)
+python3 engine/social_agent.py --from_csv output/articles/<batch>.csv
+# Obs: --from_csv não precisa de wp_post_id — usa DRAFT-N como placeholder
 
 # 3. VALIDAR 1 artigo antes de publicar
 python3 engine/publisher.py --test_one
@@ -119,7 +123,25 @@ python3 tools/bing_indexnow.py
 
 # Monitorar progresso em tempo real
 python3 tools/monitor.py
+
+# Preview HTML para aprovação do cliente
+python3 tools/preview_generator.py
+# Sobe para Firebase: firebase deploy --only hosting --project sowads-orbit
 ```
+
+## Firebase — Preview para clientes/parceiros
+
+```
+Projeto : sowads-orbit (caiorcastro@gmail.com)
+URL     : https://sowads-orbit.web.app  ← noindex, não indexável
+Config  : firebase.json + .firebaserc na raiz do repo
+Pasta   : output/preview/ (gitignored — redeploy sempre que regenerar)
+
+Deploy  : firebase deploy --only hosting --project sowads-orbit
+```
+
+**Regra:** Nunca subir dados de custo/token/velocidade nos previews — são para controle interno.
+Os HTMLs de preview são `output/preview/` — não commitados, só deployados no Firebase.
 
 ## Mapeamento de categorias CSV → WordPress
 
@@ -157,8 +179,9 @@ Score mínimo para publicação: **80/100**.
 6. **Categorias do CSV de temas** — nunca inferir
 7. **Imagens da biblioteca WP** — nunca gerar ou subir nova
 8. **Publicação manual** — `--test_one` → revisar → `--all`
-9. **CSVs nomeados com stem do input** — nunca sobrescrever entre lotes
+9. **CSVs nomeados com stem do input + model slug** — nunca sobrescrever entre lotes
 10. **Sem referências numéricas obrigatórias** — compliance Accesstage
+11. **Reports de produção são internos** — nunca expor custo/token/velocidade em previews ou URLs do cliente
 
 ## Regras de comportamento
 
