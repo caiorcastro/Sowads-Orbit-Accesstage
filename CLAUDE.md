@@ -183,13 +183,29 @@ Score mínimo para publicação: **80/100**.
 10. **Sem referências numéricas obrigatórias** — compliance Accesstage
 11. **Reports de produção são internos** — nunca expor custo/token/velocidade em previews ou URLs do cliente
 
+## Estado atual do engine (2026-04-27) — não regredir
+
+### content_engine.py
+- `call_openrouter()` retorna **3-tupla**: `(text, model, {"tok_in", "tok_out", "elapsed_api"})`
+- `MODEL_PRICING` dict + `calc_cost(model, tok_in, tok_out)` → custo em USD
+- CSV de artigos inclui colunas: `tok_in`, `tok_out`, `elapsed_s`, `cost_usd`
+- Nome do CSV: `{input_stem}_{model_slug}_batch{n}_artigos_{a}_a_{b}.csv`
+- `generate_report()`: seção de custo/velocidade, labels sem falso erro (H1 ✅ correto, JSON-LD ✅ correto)
+- Colunas `_*` (underscore) não são salvas no CSV de output WP (são internas)
+
+### social_agent.py
+- `--from_csv <path>` gera copies + events sem precisar de wp_post_id
+- Usa `DRAFT-N` como placeholder de ID e slug para URL
+- `run_lotes.sh` chama automaticamente ao final: `python3 engine/social_agent.py --from_csv "$LATEST_CSV"`
+
 ## Regras de comportamento
 
+- **Ler CLAUDE.md inteiro antes de qualquer ação** — nunca assumir estado de memória
 - Ler arquivos reais antes de agir — nunca inventar estado
 - `git status` antes de qualquer edição de pipeline
 - Nunca sobrescrever CSVs sem confirmar
 - Fixes em posts publicados: XML-RPC `wp.editPost` com regex — nunca regenerar
-- Ao final de sessão com mudanças: atualizar CLAUDE.md + ORBIT_MASTER.md + commit + push
+- Ao final de sessão com mudanças: atualizar CLAUDE.md + commit + push
 
 ## Pendências do cliente
 
