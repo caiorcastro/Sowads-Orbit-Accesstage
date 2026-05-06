@@ -23,43 +23,44 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-# Brand colors Accesstage/Veragi
-BRAND_COLOR_MAIN = "#442357"   # roxo profundo
-BRAND_COLOR_ACC  = "#dc1668"   # magenta/rosa
-
-# Estilo visual consistente injetado em todos os prompts
+# Estilo visual da Accesstage: foto real de pessoa + fundo gradiente roxo/magenta
+# Referência: hero do blog.accesstage.com.br — pessoa profissional sobre gradiente marca
 STYLE_SUFFIX = (
-    "Professional fintech corporate illustration, abstract and geometric, "
-    f"deep purple ({BRAND_COLOR_MAIN}) and magenta ({BRAND_COLOR_ACC}) color palette, "
-    "clean minimal design, no text, no people, no logos, no faces, "
-    "high resolution, 16:9 aspect ratio, editorial blog header image."
+    "Editorial blog header photo, photorealistic, high-quality professional photography. "
+    "Subject: confident Brazilian or Latin American professional in business attire, "
+    "arms crossed or working, slight smile, sharp focus. "
+    "Background: smooth gradient from deep purple #442357 to vivid magenta #dc1668, "
+    "with subtle abstract geometric shapes (rectangles, lines) as background accents. "
+    "Composition: subject positioned right-of-center or center, generous negative space on left for text overlay. "
+    "Lighting: professional studio-quality, soft shadows, vibrant colors. "
+    "16:9 aspect ratio, no text, no logos, no watermarks."
 )
 
-# Mapeamento tema → conceito visual
+# Mapeamento tema → persona e postura da foto
 TOPIC_VISUALS = {
-    "contas a pagar":     "Abstract payment flow: geometric document icons, approval checkmarks, automated pipeline connecting nodes",
-    "pagamento":          "Digital payment network: flowing data streams, transaction nodes, secure vault icon",
-    "tesouraria":         "Corporate treasury visualization: multi-bank connections, balance scales, cash flow rivers between nodes",
-    "conciliação":        "Data reconciliation: parallel data streams merging, balance checkpoints, synchronized nodes",
-    "crédito":            "Capital flow network: receivables growing upward, connected supply chain nodes, credit bridge",
-    "recebíveis":         "Receivables acceleration: upward growth arrows, funding flow, financial acceleration tunnel",
-    "antecipação":        "Acceleration of capital: compressed time arrow, cash flow acceleration, forward momentum",
-    "supply chain":       "Supply chain finance: interconnected company nodes, credit bridge, financial health shield",
-    "analytics":          "Predictive data dashboard: abstract 3D charts, neural network patterns, decision tree glowing",
-    "dados":              "Data intelligence: floating data particles forming insights, abstract neural visualization",
-    "edi":                "Digital file exchange: secure data highway, structured protocol nodes, bank connections",
-    "api":                "API connectivity: abstract mesh of connected nodes, real-time data streams, open finance bridge",
-    "open finance":       "Open finance ecosystem: bank icons connected by glowing API bridges, data sovereignty shield",
-    "cnab":               "Financial file standardization: structured data blocks, bank-to-company secure channel",
-    "van bancária":       "Banking VAN: secure file transmission tube, document packets flowing between entities",
-    "baas":               "Banking as a Service: cloud platform with embedded financial modules, scalable tech architecture",
-    "cash pooling":       "Cash pooling centralization: multiple entities funneling resources into central hub, efficiency rings",
-    "integração":         "System integration: interconnected platforms, seamless data bridges, modular architecture",
-    "gestão financeira":  "Financial management platform: centralized dashboard abstraction, control tower over data flows",
-    "software financeiro":"Corporate financial software: abstract UI modules floating, integrated workflow visualization",
-    "centralização":      "Centralized control: hub-and-spoke architecture, unified command center, converging streams",
-    "tesoureiro":         "Treasury operations: multi-account overview, cash position matrix, strategic allocation map",
-    "planejamento":       "Financial planning: strategic roadmap visualization, scenario branches, forecast horizon",
+    "contas a pagar":     "Businesswoman at laptop, reviewing digital invoice on screen, focused expression, slight smile of control and confidence",
+    "pagamento":          "Finance professional holding smartphone showing a payment confirmation screen, other hand gesturing approval",
+    "tesouraria":         "Senior male executive with arms crossed, confident posture, multiple financial screens visible behind him",
+    "conciliação":        "Female financial analyst pointing at two aligned data sets on screen, expression of precision and focus",
+    "crédito":            "Smiling Latin American businesswoman extending hand for a handshake, signaling deal closure, trustworthy posture",
+    "recebíveis":         "Young professional man presenting upward growth chart on tablet, enthusiastic and engaged expression",
+    "antecipação":        "Confident entrepreneur woman looking forward with energy, holding a tablet showing positive financial trend",
+    "supply chain":       "Diverse business team of three professionals leaning over a table reviewing documents together, collaborative energy",
+    "analytics":          "Data scientist woman pointing at a glowing analytics dashboard on large screen, team engaged in background",
+    "dados":              "Professional woman holding a tablet with data visualizations, looking at camera with confident calm expression",
+    "edi":                "Two IT professionals — man and woman — reviewing a technical diagram on laptop, collaborative and focused",
+    "api":                "Young male developer smiling at laptop in modern fintech office, open-plan background with colleagues",
+    "open finance":       "Executive man using smartphone banking app with confidence, standing in modern glass-walled office corridor",
+    "cnab":               "Operations professional woman at computer reviewing bank file exchange workflow, systematic and precise expression",
+    "van bancária":       "Banking professional man at workstation reviewing secure document transmission, serious and reliable expression",
+    "baas":               "Startup fintech team — three young professionals — working on laptops at a collaborative open workspace",
+    "cash pooling":       "CFO-type executive man in suit reviewing consolidated group treasury report, boardroom with glass walls",
+    "integração":         "Two professionals — man and woman — connecting systems on laptop and tablet, engaged and optimistic expressions",
+    "gestão financeira":  "Brazilian executive woman confidently using financial platform on laptop, modern minimalist office setting",
+    "software financeiro":"Finance manager presenting new software on screen to attentive team, training session atmosphere",
+    "centralização":      "Executive man standing arms crossed before multi-screen financial control dashboard, commanding and assured",
+    "tesoureiro":         "Senior treasury professional woman reviewing consolidated cash position on large monitor, focused and in control",
+    "planejamento":       "Strategy team around whiteboard with financial charts, engaged discussion, diverse group, modern boardroom",
 }
 
 
