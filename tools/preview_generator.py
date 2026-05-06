@@ -17,6 +17,7 @@ BASE_DIR     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATE     = os.path.join(BASE_DIR, "client", "html_template.html")
 DEFAULT_CSV  = os.path.join(BASE_DIR, "output", "articles", "lote_veragi_batch1_artigos_1_a_10.csv")
 OUT_DIR      = os.path.join(BASE_DIR, "output", "preview")
+IMAGES_DIR   = os.path.join(BASE_DIR, "output", "images")
 
 FALLBACK_IMG = "https://blog.accesstage.com.br/hubfs/ACC_BLOG_CTA-1.png"
 AUTHOR_NAME  = "Equipe Accesstage"
@@ -50,7 +51,9 @@ def build_article_page(template: str, row: dict, idx: int) -> str:
     meta_title  = row["meta_title"].strip() or title
     meta_desc   = row["meta_description"].strip()
     content     = row["post_content"].strip()
-    img_url     = row["img_blog"].strip() or FALLBACK_IMG
+    # Prefere imagem gerada localmente (copiada para images/ na pasta de saída)
+    local_img   = row.get("_local_img", "")
+    img_url     = local_img or row["img_blog"].strip() or FALLBACK_IMG
     date_str    = fmt_date(row.get("post_date", ""))
     read_time   = reading_time(content)
     slug        = slugify(title)
@@ -184,7 +187,7 @@ def build_index(articles: list) -> str:
     for a in articles:
         score = int(a["qa_score"] or 0)
         score_color = "#22c55e" if score >= 90 else "#f59e0b" if score >= 80 else "#ef4444"
-        img = a["img_blog"] or FALLBACK_IMG
+        img = a.get("_local_img") or a["img_blog"] or FALLBACK_IMG
         fname = a["_filename"]
         title = a["post_title"]
         meta_desc = a["meta_description"][:120] + "..." if len(a["meta_description"]) > 120 else a["meta_description"]
@@ -265,9 +268,13 @@ Conteúdo &copy; Accesstage {datetime.now().year}</footer>
 
 
 def main():
+    global OUT_DIR
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", default=DEFAULT_CSV)
+    parser.add_argument("--output_dir", default=OUT_DIR,
+                        help="Pasta de saída (padrão: output/preview)")
     args = parser.parse_args()
+    OUT_DIR = args.output_dir
 
     if not os.path.exists(TEMPLATE):
         print(f"Template não encontrado: {TEMPLATE}")
@@ -288,9 +295,24 @@ def main():
     generated = 0
     skipped   = 0
 
+    # Copia imagens locais para OUT_DIR/images/ e registra caminho relativo
+    img_out_dir = os.path.join(OUT_DIR, "images")
+    os.makedirs(img_out_dir, exist_ok=True)
+
     for idx, row in enumerate(rows, 1):
         score = int(row.get("qa_score", 0) or 0)
         title = row.get("post_title", "").strip()
+
+        # Verifica se existe imagem gerada localmente
+        slug_img = slugify(title)
+        src_img  = os.path.join(IMAGES_DIR, f"{slug_img}.png")
+        if os.path.exists(src_img):
+            import shutil
+            dst_img = os.path.join(img_out_dir, f"{slug_img}.png")
+            shutil.copy2(src_img, dst_img)
+            row["_local_img"] = f"images/{slug_img}.png"
+        else:
+            row["_local_img"] = ""
 
         if score == 0 or not title or not row.get("post_content", "").strip():
             print(f"  [{idx:02d}] ⏭  Pulando (score={score}, sem conteúdo): {title[:50]}")

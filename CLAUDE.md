@@ -131,17 +131,31 @@ python3 tools/preview_generator.py
 
 ## Firebase — Preview para clientes/parceiros
 
-```
-Projeto : sowads-orbit (caiorcastro@gmail.com)
-URL     : https://sowads-orbit.web.app  ← noindex, não indexável
-Config  : firebase.json + .firebaserc na raiz do repo
-Pasta   : output/preview/ (gitignored — redeploy sempre que regenerar)
+Dois sites no projeto `sowads-orbit` (caiorcastro@gmail.com):
 
-Deploy  : firebase deploy --only hosting --project sowads-orbit
+| Target  | Site ID      | URL                          | Pasta                       |
+|---------|--------------|------------------------------|-----------------------------|
+| `orbit` | sowads-orbit | https://sowads-orbit.web.app | output/preview/             |
+| `hub`   | sowads       | https://sowads.web.app       | output/sowads-hosting/      |
+
 ```
+# Redeploy hub (sowads.web.app — central de clientes):
+firebase deploy --only hosting:hub --project sowads-orbit
+
+# Redeploy orbit (sowads-orbit.web.app — preview isolado):
+firebase deploy --only hosting:orbit --project sowads-orbit
+
+# Redeploy ambos:
+firebase deploy --only hosting --project sowads-orbit
+```
+
+Estrutura de sowads.web.app:
+- `/`            → landing page com cards de clientes (output/sowads-hosting/index.html)
+- `/accesstage/` → preview Accesstage com imagens geradas (output/sowads-hosting/accesstage/)
+
+Para adicionar novo cliente: gerar preview em `output/sowads-hosting/<cliente>/`, adicionar card no index.html e redeploy.
 
 **Regra:** Nunca subir dados de custo/token/velocidade nos previews — são para controle interno.
-Os HTMLs de preview são `output/preview/` — não commitados, só deployados no Firebase.
 
 ## Mapeamento de categorias CSV → WordPress
 
@@ -192,6 +206,18 @@ Score mínimo para publicação: **80/100**.
 - Nome do CSV: `{input_stem}_{model_slug}_batch{n}_artigos_{a}_a_{b}.csv`
 - `generate_report()`: seção de custo/velocidade, labels sem falso erro (H1 ✅ correto, JSON-LD ✅ correto)
 - Colunas `_*` (underscore) não são salvas no CSV de output WP (são internas)
+
+### image_generator.py
+- `--from_csv <path>` gera 1 PNG por artigo via OpenRouter (`google/gemini-2.5-flash-image`)
+- Salva em `output/images/<slug>.png` + `output/images/manifest.csv`
+- Prompts automáticos por tema (TOPIC_VISUALS dict) + estilo visual brand Accesstage
+- `--skip_existing` (padrão True) — não regenera imagens já existentes
+- Custo: ~$0.003 para 10 imagens (~7s/imagem)
+
+### preview_generator.py
+- `--output_dir <path>` define pasta de saída (padrão: output/preview/)
+- Detecta automaticamente imagens em `output/images/<slug>.png` e as copia para `<output_dir>/images/`
+- Usa imagem local se existir, senão usa img_blog do CSV, senão FALLBACK_IMG
 
 ### social_agent.py
 - `--from_csv <path>` gera copies + events sem precisar de wp_post_id

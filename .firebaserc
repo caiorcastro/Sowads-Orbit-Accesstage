@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "sowads-orbit"
+  },
+  "targets": {
+    "sowads-orbit": {
+      "hosting": {
+        "orbit": ["sowads-orbit"],
+        "hub":   ["sowads"]
+      }
+    }
   }
 }
