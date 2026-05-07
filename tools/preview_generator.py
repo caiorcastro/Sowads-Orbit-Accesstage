@@ -192,12 +192,17 @@ def build_index(articles: list) -> str:
         title = a["post_title"]
         meta_desc = a["meta_description"][:120] + "..." if len(a["meta_description"]) > 120 else a["meta_description"]
         status = "✅ Pronto" if score >= 80 else ("⏳ Pendente" if score == 0 else "⚠️ Verificar")
+        review_badge = ""
+        if a.get("review_status") == "pos-review":
+            review_badge = '<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#dc1668;color:#fff;margin-left:6px;">Pós-Review</span>'
         cards += f"""
     <div class="card">
       <a href="{fname}">
         <img src="{img}" alt="{title}" onerror="this.src='{FALLBACK_IMG}'">
         <div class="card-body">
-          <span class="badge" style="background:{score_color};">QA {score}/100</span>
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+            <span class="badge" style="background:{score_color};">QA {score}/100</span>{review_badge}
+          </div>
           <span class="status">{status}</span>
           <h3>{title}</h3>
           <p>{meta_desc}</p>
