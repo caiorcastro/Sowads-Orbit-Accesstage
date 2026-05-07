@@ -23,44 +23,43 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-# Estilo visual da Accesstage: foto real de pessoa + fundo gradiente roxo/magenta
-# Referência: hero do blog.accesstage.com.br — pessoa profissional sobre gradiente marca
+# Estilo editorial natural — pessoas em ambiente real, sem fundo artificial
+# O brand aparece como detalhe sutil (faixa lateral, reflexo em tela), não como fundo dominante
 STYLE_SUFFIX = (
-    "Editorial blog header photo, photorealistic, high-quality professional photography. "
-    "Subject: confident Brazilian or Latin American professional in business attire, "
-    "arms crossed or working, slight smile, sharp focus. "
-    "Background: smooth gradient from deep purple #442357 to vivid magenta #dc1668, "
-    "with subtle abstract geometric shapes (rectangles, lines) as background accents. "
-    "Composition: subject positioned right-of-center or center, generous negative space on left for text overlay. "
-    "Lighting: professional studio-quality, soft shadows, vibrant colors. "
-    "16:9 aspect ratio, no text, no logos, no watermarks."
+    "Candid editorial stock photography, photorealistic, natural DSLR quality. "
+    "Setting: real modern corporate office or conference room with natural environmental depth. "
+    "People: Brazilian or Latin American professionals, natural skin tones, realistic eyes. Expressions: calm, confident, with a natural subtle smile — approachable and professional, not exaggerated, not laughing, not posing. The kind of expression of someone who enjoys their work. "
+    "Brand accent: one subtle vertical stripe or thin geometric band in deep purple #442357 or magenta #dc1668 on the far edge of the frame only — not as background. "
+    "Composition: IMPORTANT — generate as a true 16:9 wide landscape frame. Person framed from waist or chest up, centered horizontally, with generous headroom — head and shoulders must never be cropped or touch the edges. Environment fills the rest of the frame naturally. "
+    "Lighting: natural office light, no dramatic studio lighting, realistic shadows. "
+    "Output format: 16:9 horizontal landscape, 1280x720 equivalent proportions, no text, no logos, no watermarks, no stock-photo feel."
 )
 
-# Mapeamento tema → persona e postura da foto
+# Mapeamento tema → cena ambiental com contexto real
 TOPIC_VISUALS = {
-    "contas a pagar":     "Businesswoman at laptop, reviewing digital invoice on screen, focused expression, slight smile of control and confidence",
-    "pagamento":          "Finance professional holding smartphone showing a payment confirmation screen, other hand gesturing approval",
-    "tesouraria":         "Senior male executive with arms crossed, confident posture, multiple financial screens visible behind him",
-    "conciliação":        "Female financial analyst pointing at two aligned data sets on screen, expression of precision and focus",
-    "crédito":            "Smiling Latin American businesswoman extending hand for a handshake, signaling deal closure, trustworthy posture",
-    "recebíveis":         "Young professional man presenting upward growth chart on tablet, enthusiastic and engaged expression",
-    "antecipação":        "Confident entrepreneur woman looking forward with energy, holding a tablet showing positive financial trend",
-    "supply chain":       "Diverse business team of three professionals leaning over a table reviewing documents together, collaborative energy",
-    "analytics":          "Data scientist woman pointing at a glowing analytics dashboard on large screen, team engaged in background",
-    "dados":              "Professional woman holding a tablet with data visualizations, looking at camera with confident calm expression",
-    "edi":                "Two IT professionals — man and woman — reviewing a technical diagram on laptop, collaborative and focused",
-    "api":                "Young male developer smiling at laptop in modern fintech office, open-plan background with colleagues",
-    "open finance":       "Executive man using smartphone banking app with confidence, standing in modern glass-walled office corridor",
-    "cnab":               "Operations professional woman at computer reviewing bank file exchange workflow, systematic and precise expression",
-    "van bancária":       "Banking professional man at workstation reviewing secure document transmission, serious and reliable expression",
-    "baas":               "Startup fintech team — three young professionals — working on laptops at a collaborative open workspace",
-    "cash pooling":       "CFO-type executive man in suit reviewing consolidated group treasury report, boardroom with glass walls",
-    "integração":         "Two professionals — man and woman — connecting systems on laptop and tablet, engaged and optimistic expressions",
-    "gestão financeira":  "Brazilian executive woman confidently using financial platform on laptop, modern minimalist office setting",
-    "software financeiro":"Finance manager presenting new software on screen to attentive team, training session atmosphere",
-    "centralização":      "Executive man standing arms crossed before multi-screen financial control dashboard, commanding and assured",
-    "tesoureiro":         "Senior treasury professional woman reviewing consolidated cash position on large monitor, focused and in control",
-    "planejamento":       "Strategy team around whiteboard with financial charts, engaged discussion, diverse group, modern boardroom",
+    "contas a pagar":     "Finance professional at desk working on laptop, relaxed posture, natural slight smile, coffee cup nearby, bright open-plan office",
+    "pagamento":          "Business professional at standing desk working on laptop, calm and confident, colleagues in background going about their day",
+    "tesouraria":         "Treasury manager at dual monitors, leaning back slightly with quiet confidence, modern corporate office environment",
+    "conciliação":        "Financial analyst at desk comparing data on screen, engaged and at ease, natural pleasant expression, finance department",
+    "crédito":            "Two business professionals in glass-walled meeting room reviewing documents together, relaxed collaborative atmosphere",
+    "recebíveis":         "Finance professional presenting to two colleagues in bright conference room, pointing at chart, engaged and natural",
+    "antecipação":        "Entrepreneur working at laptop in modern office, window light, calm and satisfied expression reviewing results",
+    "supply chain":       "Mixed team of three professionals around conference table with laptops, engaged in easy conversation, natural energy",
+    "analytics":          "Data analyst at large monitor with charts, leaning forward with interest, natural pleasant expression, modern workspace",
+    "dados":              "Professional woman at laptop in glass-walled office, city skyline behind, composed and confident, looking at screen",
+    "edi":                "Two colleagues at shared desk reviewing system on laptop together, natural conversation, comfortable working dynamic",
+    "api":                "Developer and finance professional at laptops side by side at long table, natural collaborative energy, tech office",
+    "open finance":       "Executive at clean desk checking smartphone and laptop, composed and at ease, modern fintech office environment",
+    "cnab":               "Operations professional at computer reviewing workflow, organized back-office, calm and efficient expression",
+    "van bancária":       "Banking operations team at workstations, professional and at ease, well-lit operations center environment",
+    "baas":               "Small fintech team in open-plan office, laptops on desks, natural working atmosphere, casual and engaged",
+    "cash pooling":       "Senior executive and colleague in boardroom reviewing financial reports on table, natural confident demeanor",
+    "integração":         "IT and finance professionals in meeting room with projected diagram, engaged discussion, collaborative and relaxed",
+    "gestão financeira":  "Professional woman at clean corporate desk using financial platform on laptop, composed and confident posture",
+    "software financeiro":"Team of three in training room, presenter at screen, others attentive and engaged, natural professional setting",
+    "centralização":      "Manager with arms crossed overlooking finance operations floor, composed and assured, natural leadership presence",
+    "tesoureiro":         "Treasury professional at executive desk reviewing reports on large screen, calm focus, organized professional workspace",
+    "planejamento":       "Diverse team in modern boardroom with projections on screen, engaged in natural discussion, relaxed strategic meeting",
 }
 
 

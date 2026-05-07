@@ -118,7 +118,7 @@ def build_article_page(template: str, row: dict, idx: int) -> str:
     # Replace the complex data-srcset lazy-load img inside .post-img
     html = re.sub(
         r'(<div class="post-img">.*?)<img[^>]*>(.*?</div>)',
-        rf'\g<1><img src="{img_url}" alt="{title}" class="img-fluid" style="width:100%;height:auto;border-radius:8px;">\g<2>',
+        rf'\g<1><img src="{img_url}" alt="{title}" class="img-fluid" style="width:100%;height:auto;border-radius:8px;display:block;margin-bottom:32px;">\g<2>',
         html, count=1, flags=re.DOTALL
     )
 
@@ -233,7 +233,7 @@ def build_index(articles: list) -> str:
   .card{{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);transition:transform .2s,box-shadow .2s}}
   .card:hover{{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.14)}}
   .card a{{text-decoration:none;color:inherit;display:flex;flex-direction:column;height:100%}}
-  .card img{{width:100%;height:180px;object-fit:cover}}
+  .card img{{width:100%;aspect-ratio:16/9;object-fit:cover;object-position:center top}}
   .card-body{{padding:20px;display:flex;flex-direction:column;gap:8px;flex:1}}
   .badge{{display:inline-block;padding:3px 10px;border-radius:20px;color:#fff;font-size:11px;font-weight:700}}
   .status{{font-size:12px;color:#666}}
