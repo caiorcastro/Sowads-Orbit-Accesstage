@@ -101,3 +101,127 @@ Todo conteúdo produzido passará por aprovação estrita da equipe de Marketing
 **Contatos de aprovação:** Nyara / Myllena
 
 **Formato de entrega:** texto final limpo, formatado com H2, H3, bullet points para escaneabilidade e pronto para revisão.
+
+---
+
+## 8. Regras Editoriais — Incorporadas após Revisão da Equipe (mai/2026)
+
+Estas regras foram consolidadas a partir do feedback de revisão de Julia Mariano e Natalia Nunes sobre os lotes 1 e 2. São **obrigatórias** a partir do lote 3.
+
+---
+
+### 8.1 Formato de Título (H1)
+
+**Regra:** O título deve SEMPRE começar com verbo de ação ou palavra interrogativa. Nunca iniciar com substantivo abstrato ou artigo.
+
+| ❌ Proibido | ✅ Correto |
+|---|---|
+| A Importância da Plataforma... | Como automatizar o contas a pagar com... |
+| Soluções BaaS: Escalabilidade e... | BaaS: Como Escalar a Gestão Financeira com... |
+| Cash Pooling: Maximizando a Eficiência... | Cash Pooling: Como Centralizar Recursos e Reduzir o Custo de Capital... |
+
+**Padrão obrigatório:** `[verbo/como/por que/quando] + [benefício direto] + [contexto]`
+
+---
+
+### 8.2 Abertura (Resumo Executivo)
+
+**Regra:** A abertura deve SEMPRE começar com uma **pergunta-desafio ou provocação** que ressoa diretamente com o CFO, tesoureiro ou diretor financeiro.
+
+**Exemplos aprovados:**
+- *"Quantas decisões de caixa sua tesouraria tomou hoje com base em dados de ontem?"*
+- *"Quando o prazo médio de recebimento pressiona o caixa, a empresa precisa agir."*
+- *"A complexidade financeira cresce na mesma velocidade que o número de contas e transações."*
+
+**Nunca começar com:**
+- *"Neste artigo, vamos abordar..."*
+- *"[Tema] é um assunto cada vez mais..."*
+- *"Com o avanço da tecnologia..."*
+
+---
+
+### 8.3 Tom Estratégico — Proibido Tom Operacional ou Coloquial
+
+O artigo fala COM o CFO, não SOBRE o problema. O leitor é executivo, já conhece o problema — quer a solução estratégica.
+
+| ❌ Evitar | ✅ Usar |
+|---|---|
+| "garimpando comprovantes" | "buscando comprovantes em diferentes portais bancários" |
+| "sangra caixa" | "gera perdas financeiras" |
+| "burocracia que trava" | "processo manual que compromete a eficiência" |
+| "dor de cabeça" | "risco operacional direto" |
+
+**Registros proibidos:** coloquial, informal, dramático, alarmista.
+**Registros obrigatórios:** executivo, consultivo, orientado a resultado, objetivo.
+
+---
+
+### 8.4 Estrutura Narrativa — Fluidez antes de Bullets
+
+**Regra:** Bullets devem ser usados com moderação. Sempre que um bloco tiver mais de 4 bullets seguidos sem texto de transição, reescrever com parágrafo introdutório + lista curta + parágrafo de conclusão do bloco.
+
+**Estrutura correta de um bloco:**
+```
+[Título H2/H3 orientado à ação]
+[Parágrafo de contexto: 2-3 frases explicando o problema ou oportunidade]
+- Ponto 1
+- Ponto 2
+- Ponto 3
+[Frase de fechamento do bloco que conecta ao próximo]
+```
+
+---
+
+### 8.5 Bloco "Erros Comuns" — Micro-aberturas Obrigatórias
+
+Cada item do bloco de erros deve ter **1 frase curta de contexto** antes da descrição. Nunca lista seca.
+
+**Formato obrigatório:**
+```
+**Nome do erro:** Frase de contexto explicando por que isso é um problema.
+```
+
+**Exemplo aprovado:**
+- *Automatizar processo ruim: digitalizar um fluxo mal desenhado apenas acelera o erro.*
+- *Trabalhar com um único financiador: limita competição e reduz poder de negociação.*
+
+---
+
+### 8.6 Títulos de Seção (H2/H3) — Orientados à Ação
+
+**Regra:** Títulos de seção devem usar verbos ou perguntas, nunca substantivos puros.
+
+| ❌ Proibido | ✅ Correto |
+|---|---|
+| Critérios técnicos | Como escolher a plataforma certa |
+| Benefícios da solução | O que muda na prática com a automação |
+| Tabela comparativa | Processo manual vs. plataforma: o que muda |
+
+---
+
+### 8.7 Conclusão — Formato Padrão Obrigatório
+
+**Toda conclusão DEVE seguir este padrão:**
+
+```
+[Frase-síntese do argumento principal do artigo — 1-2 frases]
+
+Com a Plataforma Veragi, da Accesstage, é possível [benefício específico do tema do artigo]. O resultado é [outcome concreto: mais controle / menos risco / decisões mais rápidas].
+
+[CTA obrigatório:]
+Avalie como evoluir [área financeira relevante] com quem já conecta as principais instituições do país. Fale com um especialista e entenda como aplicar esse modelo na sua operação.
+```
+
+**Exemplo aprovado:**
+> *"Com a Plataforma Veragi, da Accesstage, é possível unificar dados, automatizar integrações bancárias e aplicar analytics financeiro em tempo real. O resultado é uma tesouraria mais estratégica, com decisões mais rápidas, seguras e orientadas por dados."*
+
+---
+
+### 8.8 Tabelas Comparativas — Título Descritivo
+
+Formato obrigatório para títulos de tabela:
+`[Situação A] vs. [Situação B]: [o que muda / o que compara]`
+
+Exemplos:
+- *Processo manual vs. plataforma financeira: o que muda na prática*
+- *EDI vs. API Open Finance: quando usar cada um*
