@@ -271,7 +271,7 @@ def main():
     args = parser.parse_args()
 
     if args.all:
-        csvs = sorted(glob.glob(os.path.join(BASE_DIR, "output", "articles", "lote_veragi_*opus*.csv")))
+        csvs = sorted(["output/articles/lote_veragi_batch3_claude-opus-4-7_batch1_artigos_1_a_10.csv","output/articles/lote_veragi_batch4_claude-opus-4-7_batch1_artigos_1_a_20.csv","output/articles/lote_veragi_batch4_claude-opus-4-7_batch2_artigos_21_a_30.csv","output/articles/lote_veragi_opus-4-7_todos_artigos_1_a_20.csv"])
         csvs = [c for c in csvs if "_bak" not in c and "_temas" not in c and "_retry" not in c]
     elif args.csv:
         csvs = [args.csv]
