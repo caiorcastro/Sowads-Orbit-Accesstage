@@ -347,6 +347,13 @@ REGRAS GERAIS:
 - Nao usar CTAs genericos repetitivos como "Leia o artigo completo" para todas as redes.
 - Hashtags devem vir como lista de strings sem # duplicado no texto principal.
 
+DIRETRIZES DE QUALIDADE — OBRIGATORIAS (Core Update 2026):
+- HOOK com Time-to-Answer: o hook deve entregar o valor ou provocacao central em ate 15 palavras — sem introducao historica, sem "No mundo atual...", sem contextualizacao generica antes do gancho real.
+- E-E-A-T Experiencia: escreva como quem ja viveu o problema descrito no artigo. Tom consultivo e pratico, nao academico. Ex: "Quando a tesouraria opera com extratos de ontem..." — nao "e importante destacar que...".
+- Anti-cliches 2026 PROIBIDOS: "em resumo", "fundamental ressaltar", "divisor de águas", "jornada", "no cenário atual", "cada vez mais", "num mundo globalizado", "transformacao digital" (como chavao vazio), "ecossistema" (generico). Substituir por linguagem direta e especifica.
+- Anti-alucinacao: nao citar numeros, prazos ou fatos que nao estejam no resumo do artigo. Se quiser reforcar autoridade sem dado concreto, use linguagem de escopo ("empresas que centralizam a gestao de caixa...").
+- Variacao de abertura: o hook de cada rede DEVE ser estruturalmente diferente (pergunta / dado / provocacao / afirmacao direta — nunca o mesmo padrao nas tres redes).
+
 BRIEFS POR REDE:
 {''.join(network_briefs)}
 

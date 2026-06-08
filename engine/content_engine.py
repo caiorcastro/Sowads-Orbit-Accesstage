@@ -402,11 +402,12 @@ def generate_prompt(topic, rules_json, briefing=None):
     - Word count entre 700 e 1.400 palavras — CONCISÃO É OBRIGATÓRIA. Use listas com bullet points (<ul><li>) sempre que listar etapas, benefícios ou exemplos — isso reduz palavras sem cortar o raciocínio. Parágrafos corridos só quando o argumento exige fluidez. Nenhuma frase incompleta ou cortada. Conclusão em 3 linhas no máximo.
 
     SEÇÕES ESTRUTURAIS OBRIGATÓRIAS (dentro dessas, crie H2s temáticos livres):
-    - ABERTURA: contextualiza o problema com dado real ou pergunta provocativa; sem enrolação
-    - DESENVOLVIMENTO: ao menos 4 H2 com profundidade real e exemplos práticos do mercado financeiro corporativo
-    - ERROS COMUNS: liste ao menos 3 erros reais que gestores financeiros cometem no tema, com explicação
+    - ABERTURA: responde a intenção principal nas primeiras 40 palavras + contextualiza o problema com dado real ou pergunta provocativa; zero enrolação
+    - DESENVOLVIMENTO: ao menos 4 H2 com profundidade real, exemplos práticos do mercado financeiro corporativo e ao menos 1 dado ou insight proprietário por seção
+    - ERROS COMUNS: liste ao menos 3 erros reais que gestores financeiros cometem no tema, cada um com micro-abertura de contexto (veja regra 8.5 do guia_agente.md)
+    - PRÓXIMOS PASSOS ou CHECKLIST PRÁTICO: seção curta (3 a 5 itens em <ul>) com ações que o CFO pode tomar imediatamente após ler — reduz retorno imediato à SERP e aumenta tempo na página
     - FAQ: mínimo 5 perguntas que um CFO real faria, com respostas diretas e completas
-    - CONCLUSÃO + CTA: encerra com síntese e chamada natural para conhecer a Accesstage e a plataforma Veragi
+    - CONCLUSÃO + CTA: encerra com síntese do argumento principal e chamada natural para conhecer a Accesstage e a plataforma Veragi (formato obrigatório conforme regra 8.7 do guia_agente.md)
 
     REGRAS DE FORMATAÇÃO:
     1. {output_reqs.get('wordpress_compatibility_rule', 'A resposta DEVE ter 2 blocos claramente separados.')}
@@ -430,10 +431,29 @@ def generate_prompt(topic, rules_json, briefing=None):
     - PROIBIDO usar travessão (—) como recurso estilístico recorrente
     - PROIBIDO iniciar parágrafos com: "No entanto,", "Além disso,", "Portanto,", "Vale ressaltar que", "É importante destacar", "Em suma,", "Isso posto,", "Nesse sentido,", "Sendo assim,"
     - PROIBIDO aberturas genéricas: "Neste artigo, vamos explorar...", "Neste conteúdo, abordaremos...", "Ao longo deste texto..."
+    - PROIBIDO expressões clichê de IA: "em resumo", "fundamental ressaltar", "divisor de águas", "jornada", "no cenário atual", "cada vez mais", "num mundo globalizado", "transformação digital" (como chavão vazio), "ecossistema" (como buzzword genérico)
     - Varie o comprimento das frases — misture curtas e longas naturalmente
     - Use voz ativa preferencialmente
     - Conclua seções com argumento concreto, não com resumo do que acabou de ser dito
     - Escreva como um especialista humano escreveria: direto, específico, sem floreios artificiais
+
+    ════════════════════════════════════════
+    DIRETRIZES GOOGLE CORE UPDATE — OBRIGATÓRIAS A PARTIR DE JUN/2026:
+    ════════════════════════════════════════
+
+    1. TIME-TO-ANSWER (Direto ao Ponto): A resposta exata para a intenção principal do leitor deve aparecer no PRIMEIRO PARÁGRAFO, dentro das primeiras 40 palavras. Zero introduções históricas ou conceituais antes disso. Isso otimiza snippets em destaque e extração por AI Overviews do Google.
+
+    2. INFORMATION GAIN (Dado Proprietário): Para cada tópico abordado, inclua pelo menos um dado concreto, insight de mercado, exemplo prático ou ângulo que não está nos conteúdos genéricos sobre o tema — dados operacionais do mercado financeiro corporativo brasileiro, nuances técnicas reais (ex: diferença entre CNAB 240 e CNAB 400), ou exemplos específicos de tesouraria.
+
+    3. E-E-A-T EXPERIÊNCIA (Tom de Quem Executou): Adote o tom de quem já analisou, implementou ou acompanhou casos reais. Use construções que demonstrem vivência prática: "Ao centralizar a posição de caixa em múltiplos bancos...", "Empresas que automatizaram esse processo observaram...", "Na prática, o que diferencia...". Nunca tom enciclopédico ou teórico puro.
+
+    4. VARIAÇÃO SEMÂNTICA: Não repita a palavra-chave foco de forma idêntica e forçada. Use o campo semântico expandido: sinônimos, termos correlacionados (ex: "integração bancária" → "conectividade com ERPs", "troca de arquivos financeiros", "comunicação automatizada com bancos"). Naturalidade de leitura é sinal de qualidade para o Google.
+
+    5. INTENÇÃO DE BUSCA: Este tema tem intenção COMERCIAL (o leitor quer avaliar soluções, não só aprender). Por isso: apresente tabelas comparativas e prós/contras objetivos. Fundamente argumentos de venda com evidências práticas. Evite ganchos de venda prematuros antes de estabelecer autoridade.
+
+    6. SILAGEM TEMÁTICA: Escreva pontes temáticas naturais entre os módulos da Plataforma Veragi onde couber (ex: "a integração bancária via EDI complementa a gestão de contas a pagar..."). Isso facilita a linkagem interna na edição final e reforça a autoridade tópica do domínio.
+
+    7. ANTI-ALUCINAÇÃO: Ao citar dados numéricos, leis, atualizações de mercado ou métricas, só inclua se tiver certeza real. Na ausência de dado verificável, use linguagem de escopo ("em operações típicas de tesouraria corporativa, estimativas do setor indicam...") em vez de inventar números. NUNCA cite regulações, prazos ou valores que não possa confirmar.
 
     ESTILO DO FAQ (OBRIGATÓRIO — sem script, sem JSON-LD):
     <section class="faq-section" style="background:#f8f9fa;border:1px solid #e2e2e2;border-radius:8px;padding:24px 28px;margin-top:32px;font-size:0.92em;line-height:1.6">

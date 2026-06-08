@@ -5,8 +5,9 @@
   "targets": {
     "sowads-orbit": {
       "hosting": {
-        "orbit": ["sowads-orbit"],
-        "hub":   ["sowads"]
+        "orbit":       ["sowads-orbit"],
+        "accesstage":  ["sowads-orbit"],
+        "hub":         ["sowads"]
       }
     }
   }

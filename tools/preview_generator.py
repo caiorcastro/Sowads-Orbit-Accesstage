@@ -22,7 +22,7 @@ IMAGES_DIR   = os.path.join(BASE_DIR, "output", "images")
 FALLBACK_IMG = "https://blog.accesstage.com.br/hubfs/ACC_BLOG_CTA-1.png"
 AUTHOR_NAME  = "Equipe Accesstage"
 AUTHOR_BIO   = "Time de conteúdo Accesstage"
-AUTHOR_IMG   = "https://blog.accesstage.com.br/hs-fs/hubfs/raw_assets/public/access/images/logo-access.png?width=60"
+AUTHOR_IMG   = "https://blog.accesstage.com.br/hs-fs/hubfs/raw_assets/public/access/images/logo-access-white.png?width=60"
 
 
 def slugify(text):
@@ -182,26 +182,33 @@ def build_article_page(template: str, row: dict, idx: int) -> str:
     return html
 
 
-def build_index(articles: list) -> str:
-    cards = ""
-    for a in articles:
-        score = int(a["qa_score"] or 0)
-        score_color = "#22c55e" if score >= 90 else "#f59e0b" if score >= 80 else "#ef4444"
-        img = a.get("_local_img") or a["img_blog"] or FALLBACK_IMG
-        fname = a["_filename"]
-        title = a["post_title"]
-        meta_desc = a["meta_description"][:120] + "..." if len(a["meta_description"]) > 120 else a["meta_description"]
-        status = "✅ Pronto" if score >= 80 else ("⏳ Pendente" if score == 0 else "⚠️ Verificar")
-        review_badge = ""
-        if a.get("review_status") == "pos-review":
-            review_badge = '<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#dc1668;color:#fff;margin-left:6px;">Pós-Review</span>'
-        cards += f"""
+SECTION_DIVIDER_CSS = """
+  .section-divider{grid-column:1/-1;margin:8px 0 4px;padding:20px 24px;background:linear-gradient(90deg,#442357,#dc1668);border-radius:12px;color:#fff;display:flex;align-items:center;gap:14px}
+  .section-divider .sd-icon{font-size:1.6rem}
+  .section-divider .sd-text .sd-title{font-size:1rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+  .section-divider .sd-text .sd-sub{font-size:.8rem;opacity:.75;margin-top:2px}
+"""
+
+
+def _card_html(a: dict, fallback: str) -> str:
+    score      = int(a.get("qa_score") or 0)
+    score_col  = "#22c55e" if score >= 90 else "#f59e0b" if score >= 80 else "#ef4444"
+    img        = a.get("_local_img") or a.get("img_blog") or fallback
+    fname      = a.get("_filename", "#")
+    title      = a.get("post_title", "")
+    raw_desc   = a.get("meta_description", "")
+    meta_desc  = (raw_desc[:120] + "...") if len(raw_desc) > 120 else raw_desc
+    status     = "✅ Pronto" if score >= 80 else ("⏳ Pendente" if score == 0 else "⚠️ Verificar")
+    review_badge = ""
+    if a.get("review_status") == "pos-review":
+        review_badge = '<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#dc1668;color:#fff;margin-left:6px;">Pós-Review</span>'
+    return f"""
     <div class="card">
       <a href="{fname}">
-        <img src="{img}" alt="{title}" onerror="this.src='{FALLBACK_IMG}'">
+        <img src="{img}" alt="{title}" onerror="this.src='{fallback}'">
         <div class="card-body">
           <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-            <span class="badge" style="background:{score_color};">QA {score}/100</span>{review_badge}
+            <span class="badge" style="background:{score_col};">QA {score}/100</span>{review_badge}
           </div>
           <span class="status">{status}</span>
           <h3>{title}</h3>
@@ -211,8 +218,37 @@ def build_index(articles: list) -> str:
       </a>
     </div>"""
 
+
+def _section_html(title: str, subtitle: str, icon: str = "✨") -> str:
+    return f"""
+    <div class="section-divider">
+      <span class="sd-icon">{icon}</span>
+      <div class="sd-text">
+        <div class="sd-title">{title}</div>
+        <div class="sd-sub">{subtitle}</div>
+      </div>
+    </div>"""
+
+
+def build_index(articles: list, sections: list | None = None) -> str:
+    """
+    sections: lista de dicts com:
+      {"after": N, "title": "...", "subtitle": "...", "icon": "..."}
+      Insere um divisor visual ANTES do artigo N (1-indexed).
+      after=1 → divisor antes do 1º artigo (cabeçalho inicial da seção).
+    """
+    sections = sections or []
+    section_map = {s["after"]: s for s in sections}
+
+    cards = ""
+    for i, a in enumerate(articles, 1):
+        if i in section_map:
+            s = section_map[i]
+            cards += _section_html(s["title"], s["subtitle"], s.get("icon", "✨"))
+        cards += _card_html(a, FALLBACK_IMG)
+
     total = len(articles)
-    ready = sum(1 for a in articles if int(a["qa_score"] or 0) >= 80)
+    ready = sum(1 for a in articles if int(a.get("qa_score") or 0) >= 80)
 
     return f"""<!doctype html>
 <html lang="pt">
@@ -235,6 +271,7 @@ def build_index(articles: list) -> str:
   .summary-box .num{{font-size:2rem;font-weight:700}}
   .summary-box .lbl{{font-size:.8rem;opacity:.8;text-transform:uppercase}}
   .grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:24px;padding:40px 32px;max-width:1300px;margin:0 auto}}
+  {SECTION_DIVIDER_CSS}
   .card{{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);transition:transform .2s,box-shadow .2s}}
   .card:hover{{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.14)}}
   .card a{{text-decoration:none;color:inherit;display:flex;flex-direction:column;height:100%}}
@@ -251,7 +288,7 @@ def build_index(articles: list) -> str:
 </head>
 <body>
 <div class="topbar">
-  <img src="https://blog.accesstage.com.br/hs-fs/hubfs/raw_assets/public/access/images/logo-access.png?width=200" alt="Accesstage">
+  <img src="https://blog.accesstage.com.br/hs-fs/hubfs/raw_assets/public/access/images/logo-access-white.png?width=200" alt="Accesstage">
   <span>Preview de Conteúdo &mdash; Sowads Orbit AI</span>
   <a href="https://site.accesstage.com.br/" target="_blank" rel="noopener">Visite o site →</a>
 </div>
@@ -278,6 +315,8 @@ def main():
     parser.add_argument("--csv", default=DEFAULT_CSV)
     parser.add_argument("--output_dir", default=OUT_DIR,
                         help="Pasta de saída (padrão: output/preview)")
+    parser.add_argument("--section_break", action="append", metavar="N:TÍTULO:SUBTÍTULO[:ÍCONE]",
+                        help="Adiciona divisor visual antes do artigo N. Repetível.")
     args = parser.parse_args()
     OUT_DIR = args.output_dir
 
@@ -339,7 +378,20 @@ def main():
         generated += 1
         print(f"  [{idx:02d}] ✅ {filename}  (score={score})")
 
-    index_html = build_index(index_articles)
+    # Seções: --section_break "11:Novos — Core Update 2026:30 artigos gerados com Claude Opus 4.7"
+    sections = []
+    if hasattr(args, "section_break") and args.section_break:
+        for sb in args.section_break:
+            parts = sb.split(":", 3)
+            if len(parts) >= 2:
+                sections.append({
+                    "after":    int(parts[0]),
+                    "title":    parts[1],
+                    "subtitle": parts[2] if len(parts) > 2 else "",
+                    "icon":     parts[3] if len(parts) > 3 else "✨",
+                })
+
+    index_html = build_index(index_articles, sections=sections)
     index_path = os.path.join(OUT_DIR, "index.html")
     with open(index_path, "w", encoding="utf-8") as f:
         f.write(index_html)
