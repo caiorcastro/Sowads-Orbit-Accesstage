@@ -221,6 +221,16 @@ CHECKLIST HTML OBRIGATÓRIO (inspecione o HTML real recebido):
   ✓ Não há texto em inglês sem contexto, espanhol ou outros idiomas
   ✓ Sem asteriscos **texto** (markdown não renderizado)
 
+CHECKLIST GOOGLE CORE UPDATE 2026 (avalie cada critério — cite o trecho se falhar):
+  • TIME-TO-ANSWER: O primeiro parágrafo entrega a resposta à intenção principal em até 40 palavras? Ou começa com introdução histórica/conceitual vaga?
+  • INFORMATION GAIN: O artigo traz pelo menos 1 dado, insight ou ângulo proprietário por seção — algo que não está nos resultados genéricos do Google sobre o tema?
+  • E-E-A-T EXPERIÊNCIA: O texto adota tom de quem executou e analisou na prática? Ou é enciclopédico/teórico puro? Cite a abertura e 1 exemplo do corpo.
+  • VARIAÇÃO SEMÂNTICA: A keyword principal é explorada por campo semântico expandido (sinônimos, termos correlatos) ou repetida forçadamente?
+  • PRÓXIMOS PASSOS / CHECKLIST: O artigo termina com ações práticas que o leitor pode tomar imediatamente? (Seção "Próximos Passos" ou "Checklist Prático")
+  • ANTI-CLICHÊS 2026: Detectar uso de: "em resumo", "fundamental ressaltar", "divisor de águas", "jornada", "no cenário atual", "cada vez mais", "num mundo globalizado", "ecossistema" (genérico). Liste ocorrências encontradas.
+  • ANTI-ALUCINAÇÃO: Algum dado numérico, prazo ou regulação é citado sem escopo claro? Algum número parece inventado ou desatualizado?
+  • SILAGEM TEMÁTICA: O artigo cria pontes naturais com outros módulos Veragi relevantes, facilitando linkagem interna futura?
+
 ERROS CONCEITUAIS CRÍTICOS A VERIFICAR (cite o texto exato se encontrar):
   • CNAB: "Centro Nacional de Automação Bancária" — não "Comissão" nem outra definição
   • Cash Pooling físico (Zero Balancing): transfere saldo real entre contas
@@ -252,6 +262,17 @@ MODELO {label} — Artigo [N]: [Título completo]
 Marketing [nota/10]: [2-3 frases. Seja específico. Cite o que funcionou e o que falhou.]
 Humano/CFO [nota/10]: [2-3 frases. Profundidade real? Português-BR correto? Ensina algo?]
 SEO/Crawler [nota/10]: [2-3 frases. Estrutura HTML, entidades, word count, FAQ, originalidade.]
+
+🔎 GOOGLE CORE UPDATE 2026:
+- Time-to-Answer: [✓ responde nas primeiras 40 palavras / ✗ introdução vaga — cite a abertura real]
+- Information Gain: [✓ dado/insight proprietário por seção / ✗ conteúdo genérico — cite seção que falhou]
+- E-E-A-T Experiência: [✓ tom prático e vivencial / ✗ enciclopédico — cite 1 exemplo]
+- Variação Semântica: [✓ campo semântico expandido / ✗ keyword stuffing — cite padrão detectado]
+- Próximos Passos: [✓ presente com checklist / ✗ ausente]
+- Anti-clichês 2026: [✓ limpo / ✗ liste as ocorrências exatas encontradas]
+- Anti-alucinação: [✓ dados com escopo claro / ✗ cite dado suspeito]
+- Silagem Temática: [✓ pontes naturais com outros módulos / ✗ artigo isolado sem conexões]
+- Nota Core Update: [X.X/10]
 
 ⚠️ PROBLEMAS ENCONTRADOS (seja cirúrgico — cite o texto ou tag exata):
 - [Erro 1: descreva + cite trecho ou tag]
@@ -293,6 +314,7 @@ RESUMO FINAL DO MODELO {label}:
 - Nota média: [X.X/10]  ← média das notas finais dos artigos
 - Nota qualidade editorial: [X.X/10]  ← media Marketing + Humano
 - Nota indexação SEO: [X.X/10]  ← nota SEO
+- Nota Core Update 2026: [X.X/10]  ← média dos 8 critérios do Core Update
 - Consistência geral: [alta/média/baixa]
 - Português-BR: [fluido / aceitável / problemático]
 - HTML: [consistente / com falhas pontuais / problemático]
@@ -469,7 +491,7 @@ Mencione que todos os modelos foram avaliados com HTML real, mesma régua, mesmo
 
 ## Tabela Comparativa Completa
 Tabela Markdown com TODOS os modelos, ordenada por nota média, colunas:
-| # | Modelo | Qualidade | SEO | Média | Vel(s) | U$/artigo | Palavras | QA |
+| # | Modelo | Qualidade | SEO | Core Update 2026 | Média | Vel(s) | U$/artigo | Palavras | QA |
 
 ## Análise Detalhada por Modelo
 Para CADA modelo (do melhor ao pior), uma seção com:
