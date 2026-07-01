@@ -196,6 +196,7 @@ Score mínimo para publicação: **80/100**.
 9. **CSVs nomeados com stem do input + model slug** — nunca sobrescrever entre lotes
 10. **Sem referências numéricas obrigatórias** — compliance Accesstage
 11. **Reports de produção são internos** — nunca expor custo/token/velocidade em previews ou URLs do cliente
+12. **Deploy Firebase: sowads-orbit é HUB MULTI-CLIENTE** — `firebase deploy` substitui o site INTEIRO e pode apagar outros clientes (accesstage, omt, precolandia, simuladinheiro — incl. subpastas aninhadas como `precolandia/blog_lote2/`). NUNCA rodar `firebase deploy` direto (o hook `PreToolUse` bloqueia). Deploy só via `python3 tools/safe_deploy.py <target>`, que confere paridade com o site live antes de subir. Detalhes e rollback: [docs/DEPLOY_SAFETY.md](docs/DEPLOY_SAFETY.md).
 
 ## Estado atual do engine (2026-04-27) — não regredir
 
