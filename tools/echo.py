@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Orbit Ghostwriter — feature de plataforma: transforma conteúdo publicado (artigo do blog)
-em post autoral de LinkedIn na VOZ de um líder (emulação de persona), e gera um DOCX com
-1 post por página. Um post por artigo, um prompt por artigo.
+Sowads Echo — feature de plataforma: o líder "ecoa" o conteúdo publicado da empresa na
+própria voz. Transforma um artigo do blog em post autoral de LinkedIn (emulação de persona)
+e gera um DOCX com 1 post por página. Um post por artigo, um prompt por artigo.
 
 Config de persona atual: Celso Sato (CEO Accesstage) — 1ª pessoa, gancho variado (9 ângulos
 rotacionados), insight de liderança, técnico traduzido em benefício humano, fecho com
@@ -10,10 +10,10 @@ pergunta, link + hashtags. Sem emoji, sem travessão, sem cacoetes de IA (limpez
 Modelo padrão: anthropic/claude-opus-4.7.
 
 Uso:
-  python3 tools/ghostwriter.py --csv output/articles/<batch>.csv \
+  python3 tools/echo.py --csv output/articles/<batch>.csv \
       --url_dir output/accesstage-site/<lote> \
       --url_base https://sowads-accesstage.web.app/<lote> \
-      --out output/celso/ghostwriter_<lote>.docx [--limit N] [--model <id>]
+      --out output/echo/sowads_echo_<lote>.docx [--limit N] [--model <id>]
 """
 import os, re, csv, glob, html, argparse, time
 import requests
@@ -116,7 +116,7 @@ def main():
     ap.add_argument("--csv", default=os.path.join(BASE, "output/articles/lote_veragi_lote2_combined.csv"))
     ap.add_argument("--url_dir", default=os.path.join(BASE, "output/accesstage-site/lote2"))
     ap.add_argument("--url_base", default="https://sowads-accesstage.web.app/lote2")
-    ap.add_argument("--out", default=os.path.join(BASE, "output/celso/celso_linkedin_lote2.docx"))
+    ap.add_argument("--out", default=os.path.join(BASE, "output/echo/sowads_echo_lote2.docx"))
     ap.add_argument("--lote", default="Lote 2")
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--limit", type=int, default=0, help="0 = todos; N = só os N primeiros (amostra)")
@@ -130,7 +130,7 @@ def main():
     doc = Document()
     st = doc.styles["Normal"]; st.font.name = "Calibri"; st.font.size = Pt(11)
     # capa
-    h = doc.add_paragraph(); run = h.add_run("Posts LinkedIn de Celso Sato"); run.bold = True; run.font.size = Pt(22)
+    h = doc.add_paragraph(); run = h.add_run("Sowads Echo · Posts de Celso Sato"); run.bold = True; run.font.size = Pt(22)
     sub = doc.add_paragraph(); r2 = sub.add_run(f"Emulação do CEO · a partir dos artigos do blog · {a.lote} · {len(rows)} posts")
     r2.font.size = Pt(12); r2.font.color.rgb = RGBColor(0x5b,0x6b,0x7b)
     doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)

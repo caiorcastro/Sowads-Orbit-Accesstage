@@ -225,6 +225,15 @@ Score mínimo para publicação: **80/100**.
 - Usa `DRAFT-N` como placeholder de ID e slug para URL
 - `run_lotes.sh` chama automaticamente ao final: `python3 engine/social_agent.py --from_csv "$LATEST_CSV"`
 
+### tools/echo.py — Sowads Echo (feature de plataforma)
+
+- Transforma artigo do blog em **post autoral de LinkedIn na voz de um líder** (emulação de persona). Não é resumo — é o líder reagindo ao tema.
+- Persona atual: **Celso Sato (CEO Accesstage)**, no prompt de sistema. 9 ângulos de abertura rotacionados (nenhum post começa igual).
+- **Sem emoji, sem travessão, sem cacoetes de IA** (limpeza pós-processo `clean_text`). Modelo padrão `anthropic/claude-opus-4.7`.
+- Saída: **DOCX com 1 post por página**. `--limit N` gera amostra; `--model` troca o modelo.
+- **Fluxo obrigatório: aprovar o SAMPLE com o cliente antes de gerar o lote inteiro.** Nunca gerar tudo sem OK.
+- Geradores de tema irmãos: `tools/gen_temas_aprovacao.py` (xlsx de aprovação por lote, deduplicado) e `tools/gen_temas_mes.py`.
+
 ## Regras de comportamento
 
 - **Ler CLAUDE.md inteiro antes de qualquer ação** — nunca assumir estado de memória

@@ -169,6 +169,34 @@ Relatório de benchmark disponível (não indexável):
 
 ---
 
+## Sowads Echo — do artigo à voz do líder
+
+Feature de plataforma que faz um líder **"ecoar" o conteúdo publicado da empresa na própria voz**.
+Pega um artigo do blog e o transforma num **post autoral de LinkedIn** por **emulação de persona**
+(não é resumo — é o líder reagindo ao tema com opinião e voz de dono). Saída: um **DOCX com
+1 post por página** (1 post por artigo, 1 prompt por artigo).
+
+```bash
+python3 tools/echo.py \
+  --csv output/articles/<batch>.csv \
+  --url_dir output/accesstage-site/<lote> \
+  --url_base https://sowads-accesstage.web.app/<lote> \
+  --out output/echo/sowads_echo_<lote>.docx \
+  [--limit N] [--model <id>]
+```
+
+Como funciona:
+- **Persona configurável** (hoje: Celso Sato, CEO Accesstage) no prompt de sistema do `echo.py`.
+- **9 ângulos de abertura rotacionados** (tese, fala de cliente, número, contraste, opinião firme…)
+  para nenhum post começar igual ao outro.
+- **Voz humana, sem cara de IA**: 1ª pessoa, insight de liderança, técnico traduzido em benefício
+  humano, fecho com pergunta, link + hashtags. **Sem emoji, sem travessão, sem cacoetes de IA**
+  (há limpeza pós-processo que remove travessão/`;` e normaliza pontuação).
+- **Modelo padrão:** `anthropic/claude-opus-4.7` (`--model` para trocar). `--limit N` gera uma amostra.
+- **Fluxo:** sempre aprovar o **sample** com o cliente antes de gerar o lote inteiro.
+
+---
+
 ## Invariantes — nunca quebrar
 
 1. **OpenRouter sempre** — nunca API direta
