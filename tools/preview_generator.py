@@ -22,7 +22,7 @@ IMAGES_DIR   = os.path.join(BASE_DIR, "output", "images")
 FALLBACK_IMG = "https://blog.accesstage.com.br/hubfs/ACC_BLOG_CTA-1.png"
 AUTHOR_NAME  = "Equipe Accesstage"
 AUTHOR_BIO   = "Time de conteúdo Accesstage"
-AUTHOR_IMG   = "https://blog.accesstage.com.br/hs-fs/hubfs/raw_assets/public/access/images/logo-access-white.png?width=60"
+AUTHOR_IMG   = "https://blog.accesstage.com.br/hubfs/cropped-cropped-Site_Accesstage_FAVICON.png"
 
 
 def slugify(text):
@@ -288,7 +288,7 @@ def build_index(articles: list, sections: list | None = None) -> str:
 </head>
 <body>
 <div class="topbar">
-  <img src="https://blog.accesstage.com.br/hs-fs/hubfs/raw_assets/public/access/images/logo-access-white.png?width=200" alt="Accesstage">
+  <span style="font-weight:800;font-size:20px;letter-spacing:-.02em;color:#fff">accesstage</span>
   <span>Preview de Conteúdo &mdash; Sowads Orbit AI</span>
   <a href="https://site.accesstage.com.br/" target="_blank" rel="noopener">Visite o site →</a>
 </div>

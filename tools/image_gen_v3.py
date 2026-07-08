@@ -58,18 +58,19 @@ GAZE = (
     "space, daydreaming, blank or tired look, head drooping down."
 )
 SCREENS = (
-    "SCREENS must look like a REAL working screen: a DARKER, muted professional dashboard (NOT a blinding white "
-    "screen), realistic SMALL fonts and fine UI details, only SUBTLE minimal reflections. DEVICE LOGIC (critical, "
-    "check it): the screen is on the CORRECT face of the device, oriented toward the person using it — a laptop "
-    "screen faces its user, a tablet/phone faces the holder. NEVER show a screen on the BACK/rear of a device, NEVER "
-    "rotate a device so its screen faces the camera unnaturally. GEOMETRY (check this): the person(s) AND the camera "
-    "are on the SAME side as the screen face — the person sits IN FRONT of the device facing its screen and roughly "
-    "toward the camera; we see the screen from the front at an angle. NEVER place a person BEHIND the device looking "
-    "at the closed back/lid while the screen faces the camera. For TWO people sharing, use a DESKTOP MONITOR on the "
-    "desk that both view from the front (like real editorial stock), NOT a shared laptop. Prefer a natural 3/4 angle "
-    "so we see BOTH the person's face and the correctly-oriented screen foreshortened. Any on-screen label is SMALL "
-    "and in Portuguese (like a real UI), matching the topic — NO giant banner titles, NO huge text, NO English, NO "
-    "gibberish. A laptop/monitor in the foreground must be fully inside the frame."
+    "SCREEN SAFETY — ABSOLUTE RULE (this has failed repeatedly): DO NOT show any laptop or desktop monitor with its "
+    "SCREEN/display facing the camera. The model keeps painting the display onto the BACK of the device — strictly "
+    "forbidden. Use ONLY one of these safe setups: "
+    "(a) NO device screen at all — build the scene on people plus a PRINTED document or report they read, a real "
+    "conversation, natural gestures, or a window with the São Paulo skyline; "
+    "(b) a WALL-MOUNTED presentation SCREEN or TV fixed on the wall showing a simple clean diagram, with people "
+    "looking at it (a wall screen faces the room naturally — always safe); "
+    "(c) STRICT OVER-THE-SHOULDER: the camera is directly BEHIND the seated person; the laptop screen faces away "
+    "from the camera in the SAME direction the person looks, and we glimpse it over their shoulder. "
+    "Any laptop/monitor otherwise present must be CLOSED or seen from the SIDE/BACK — never its face toward the "
+    "camera with a person behind it. Screens are DARK, realistic, unreadable; NO English, NO gibberish, NO big text; "
+    "any label tiny and Portuguese, only on a wall screen. GAZE: the person looks AT the document / the wall screen "
+    "/ the colleague / or thoughtfully toward the window — engaged, NEVER blankly at empty space."
 )
 BACKGROUND = (
     "BACKGROUND: at most 1-2 people far behind, heavily blurred (strong shallow depth of field), NOT interacting "
@@ -90,10 +91,12 @@ GLOBAL_RULES = (
     "natural coherent office lighting. " + FRAMING + " " + GAZE + " " + SCREENS + " " + BACKGROUND + " " + HUMAN +
     " NO holograms, NO floating UI, NO glowing 3D, NO sci-fi, NO text overlays, NO bank brands."
 )
-COMPOSITIONS = ("dupla conversando; pessoa sozinha na mesa; pessoa em pé na janela com skyline; sala de reunião "
-    "com 3-4 pessoas; retrato natural sorrindo; pessoa de perfil na mesa; apresentação em tela de parede; "
-    "close das mãos com documento e a pessoa parcialmente visível; pequena equipe em pé; pessoa caminhando pelo "
-    "corredor; over-the-shoulder no monitor; pessoa recostada analisando; duas pessoas de pé junto a um monitor")
+# SÓ composições sem risco de "tela na traseira": documento, conversa, janela, tela de parede, over-the-shoulder
+COMPOSITIONS = ("dupla revisando um relatório impresso; três pessoas discutindo em torno de documentos; presenter "
+    "apontando para uma TELA DE PAREDE/TV com um diagrama simples enquanto colegas assistem; pessoa em pé na janela "
+    "com skyline de São Paulo (pensativa); conversa um-a-um natural; pequena equipe em pé conversando; close das mãos "
+    "revisando um documento com a pessoa parcialmente visível; over-the-shoulder (câmera ATRÁS) de alguém no laptop; "
+    "dois colegas se cumprimentando; pessoa caminhando pelo corredor com uma pasta; reunião de mesa com papéis")
 
 def chat(messages, model=TEXT_MODEL, max_tokens=1400, temp=0.8):
     r = requests.post(OR_URL, headers={"Authorization": f"Bearer {KEY}", "Content-Type": "application/json",
@@ -233,9 +236,13 @@ def main():
         return gen_from_manifest()
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     dry = "--dry" in sys.argv
-    n = int(args[0]) if args else 10
     rows = list(csv.DictReader(open(CSV, encoding="utf-8")))
-    picks = [rows[i] for i in PICK[:n]]
+    if args and args[0] == "all":
+        picks = rows
+        outdir = os.path.join(BASE, "output/images_lote2_final"); os.makedirs(outdir, exist_ok=True)
+    else:
+        n = int(args[0]) if args else 10
+        picks = [rows[i] for i in PICK[:n]]; outdir = OUT
     chosen, manifest = [], []
     for k, row in enumerate(picks, 1):
         title = row.get("post_title", "").strip()
@@ -248,15 +255,14 @@ def main():
         idx, tag = pick_best(title, resumo, opts, chosen, seq=k-1)
         scene = opts[idx]; chosen.append(tag or scene[:50])
         print(f"   → minimax escolheu #{idx}: [{tag}]")
-        print(f"     {scene[:100]}")
         manifest.append({"slug": slug, "title": title, "idx": idx, "tag": tag, "scene": scene})
         if dry:
             continue
         raw = call_image_api(f"{scene} {OFFICE} {GLOBAL_RULES}", KEY, IMG_MODEL)
         if not raw: print("   ✗ imagem falhou"); continue
-        with open(os.path.join(OUT, f"{slug}.png"), "wb") as f: f.write(finalize(raw))
+        with open(os.path.join(outdir, f"{slug}.png"), "wb") as f: f.write(finalize(raw))
         print(f"   ✓ {slug}.png")
-    with open(os.path.join(OUT, "_manifest.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(outdir, "_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
     tags = [m["tag"] or m["scene"][:30] for m in manifest]
     print(f"\n{'DRY — ' if dry else ''}{len(manifest)} escolhas | diversidade de composições:")

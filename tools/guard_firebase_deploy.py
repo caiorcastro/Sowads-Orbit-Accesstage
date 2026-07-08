@@ -31,7 +31,9 @@ def is_real_deploy(seg: str) -> bool:
     s = seg.strip()
     # remove wrappers comuns no início (nohup, sudo, env VAR=x, time)
     s = re.sub(r"^(?:nohup\s+|sudo\s+|time\s+|env\s+\w+=\S+\s+)+", "", s)
-    return bool(re.match(r"firebase\s+(?:deploy|hosting:channel:deploy)\b", s))
+    # bloqueia SÓ o deploy LIVE (substitui o site inteiro). Preview channel
+    # (hosting:channel:deploy) é SEGURO — URL isolada, não toca no live — e fica LIBERADO.
+    return bool(re.match(r"firebase\s+deploy\b", s))
 
 if any(is_real_deploy(seg) for seg in segments):
     reason = (
