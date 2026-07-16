@@ -234,6 +234,23 @@ Score mínimo para publicação: **80/100**.
 - **Fluxo obrigatório: aprovar o SAMPLE com o cliente antes de gerar o lote inteiro.** Nunca gerar tudo sem OK.
 - Geradores de tema irmãos: `tools/gen_temas_aprovacao.py` (xlsx de aprovação por lote, deduplicado) e `tools/gen_temas_mes.py`.
 
+## Relatório mensal de publicação (base para cruzar com Google Search Console)
+
+Processo recorrente (parte do report mensal): medir **o que subiu do que a gente gerou** e cruzar com o desempenho no GSC.
+
+```bash
+python3 tools/report_publicacao.py                       # baixa sitemap, reconcilia, gera report
+python3 tools/report_publicacao.py --gsc export_gsc.csv  # já preenche clicks/impressões por URL
+```
+
+O que o `report_publicacao.py` faz:
+- Baixa o **sitemap** do blog (com `<lastmod>`) e compara com o snapshot anterior → **URLs novas desde o último report**.
+- **Reconcilia** o que NÓS geramos (lotes 1-4 + Lote 2, por `topic_pt`/`post_title`) × o que está publicado, por **match de nome (Jaccard, limiar 0.42)** — os slugs do blog são reescritos, então não dá match exato.
+- Gera **`output/reports/publicados_report.xlsx`/.csv** (NOSSOS publicados: URL real + data + título + lote + confiança + colunas Clicks/Impressões/CTR/Posição). A **coluna URL é a chave** pra join com o export do GSC (Performance → Pages). Passe `--gsc <csv>` pra já preencher as métricas.
+- Atualiza o **snapshot de dedup** (`urls_publicadas_accesstage.*`).
+
+Ressalvas: match por nome pode ter falso positivo/negativo (confiança <0.5 vai marcada com ⚠ em vermelho — revisar). Lote 2 ainda não está no blog (fica no site isolado `sowads-accesstage.web.app`), então matches de Lote 2 no blog são suspeitos.
+
 ## Regras de comportamento
 
 - **Ler CLAUDE.md inteiro antes de qualquer ação** — nunca assumir estado de memória
