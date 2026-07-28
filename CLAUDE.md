@@ -53,10 +53,13 @@ output/          ← tudo que sai (gitignored)
 Endpoint       : https://openrouter.ai/api/v1/chat/completions
 Chave          : OPENROUTER_API_KEY no .env
 
-Modelo padrão  : google/gemini-2.5-flash       (~15s/artigo, $0.30/$2.50 por M tokens)
-Fallback padrão: google/gemini-2.5-flash-lite   (~8s/artigo,  $0.10/$0.40 por M tokens)
-Qualidade max  : anthropic/claude-opus-4.7       (~40s/artigo — usar apenas com --model explícito)
+Modelo de PRODUÇÃO (Accesstage): anthropic/claude-opus-4.7  (~70s/artigo, $5/$25 por M tokens, 100/100 QA)
+Fallback                       : anthropic/claude-sonnet-4.6
+Rápido/rascunho/volume         : google/gemini-2.5-flash    (~15s/artigo, $0.30/$2.50)
 ```
+
+**Benchmark de modelo jul/2026 (opus 4.7 × 4.8 × 5, mesmos temas, juiz cego gemini-2.5-pro):**
+opus-4.7 **venceu qualidade editorial E potencial de indexação (SEO)** nos dois temas. opus-4.8 é mais rápido/enxuto/barato, mas foi rateado abaixo (9 vs 7). opus-5 escreve ~33% mais (prolixo) → mais caro por artigo, mais lento, e **pior SEO** (enchimento dilui information gain/time-to-answer). Todos custam **$5/$25** no OpenRouter. **Decisão: manter opus-4.7 em produção.**
 
 ### Comparativo de modelos testados (benchmark Sowads Orbit × Accesstage, abr/2026)
 
@@ -64,7 +67,9 @@ Qualidade max  : anthropic/claude-opus-4.7       (~40s/artigo — usar apenas co
 |---|---|---|---|---|
 | `google/gemini-2.5-flash` | ~15s | $0.30 | $2.50 | Padrão — rápido, score 100 |
 | `google/gemini-2.5-flash-lite` | ~8s | $0.10 | $0.40 | Volume alto, muito barato |
-| `anthropic/claude-opus-4.7` | ~40s | $15.00 | $75.00 | Qualidade editorial máxima, 100/100 QA; custo alto para lote |
+| `anthropic/claude-opus-4.7` | ~70s | $5.00 | $25.00 | **Produção Accesstage.** Venceu 4.8 e 5 em qualidade+SEO (jul/26), 100/100 QA |
+| `anthropic/claude-opus-4.8` | ~61s | $5.00 | $25.00 | Mais rápido/enxuto, mas rateado abaixo do 4.7 no teste (9 vs 7) |
+| `anthropic/claude-opus-5` | ~88s | $5.00 | $25.00 | Prolixo (+33% saída) → mais caro/art, mais lento, pior indexação |
 | `deepseek/deepseek-v4-pro` | ~170s | $0.44 | $0.87 | Qualidade alta, lento, risco de hang |
 | `deepseek/deepseek-chat-v3-0324` | ~40s | $0.20 | $0.77 | Custo-benefício DeepSeek |
 
