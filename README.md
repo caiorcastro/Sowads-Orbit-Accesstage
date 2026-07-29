@@ -171,6 +171,10 @@ Relatório de benchmark disponível (não indexável):
 
 ## Sowads Echo — do artigo à voz do líder
 
+Especificação operacional completa: [docs/SOWADS_ECHO.md](docs/SOWADS_ECHO.md). A migração
+isolada por cliente para Pages está documentada em
+[docs/CLOUDFLARE_PAGES_MIGRATION.md](docs/CLOUDFLARE_PAGES_MIGRATION.md).
+
 Feature de plataforma que faz um líder **"ecoar" o conteúdo publicado da empresa na própria voz**.
 Pega um artigo do blog e o transforma num **post autoral de LinkedIn** por **emulação de persona**
 (não é resumo — é o líder reagindo ao tema com opinião e voz de dono). Saída: um **DOCX com

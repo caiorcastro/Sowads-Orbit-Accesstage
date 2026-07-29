@@ -232,6 +232,9 @@ Score mínimo para publicação: **80/100**.
 
 ### tools/echo.py — Sowads Echo (feature de plataforma)
 
+Especificação e checklist completos: `docs/SOWADS_ECHO.md`. Plano de separação da hospedagem por
+cliente: `docs/CLOUDFLARE_PAGES_MIGRATION.md`.
+
 - Transforma artigo do blog em **post autoral de LinkedIn na voz de um líder** (emulação de persona). Não é resumo — é o líder reagindo ao tema.
 - Persona atual: **Celso Sato (CEO Accesstage)**. Fonte de comportamento: `client/personas/celso_sato.md`.
 - **20 ângulos de abertura rotacionados**; cenas, clientes, números e estatísticas só podem ser usados se estiverem no artigo-fonte.

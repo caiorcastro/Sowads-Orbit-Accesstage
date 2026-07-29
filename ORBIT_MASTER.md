@@ -289,6 +289,9 @@ python3 engine/qa_validator.py --path "output/articles/*.csv"
 
 ## 15. Marco — Sowads Echo e Lote 3 (2026-07-29)
 
+Documento canônico de operação: `docs/SOWADS_ECHO.md`. A migração gradual e reversível para
+Cloudflare Pages, com um projeto por cliente, está em `docs/CLOUDFLARE_PAGES_MIGRATION.md`.
+
 O **Sowads Echo** passou a ser uma entrega complementar do Orbit: cada artigo aprovado pode
 vir acompanhado de uma copy autoral de LinkedIn na voz do líder.
 
