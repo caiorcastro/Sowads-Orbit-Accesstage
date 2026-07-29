@@ -197,8 +197,10 @@ Como funciona:
   só podem ser liberados no modo `subtle` (no máximo um, contextual).
 - **Modelo padrão:** `anthropic/claude-opus-4.7` (`--model` para trocar). `--limit N` gera uma amostra.
 - **Fluxo:** sempre aprovar o **sample** com o cliente antes de gerar o lote inteiro.
-- **Preview integrado:** `tools/generate_echo_preview.py` une fichas de publicação e cards de
-  LinkedIn em uma subpágina isolada do hub. Marco atual: `/accesstage/lote3-echo/`.
+- **Preview integrado:** `tools/generate_echo_preview.py` apresenta cada artigo ao lado da sua
+  simulação de LinkedIn, em dois pares por linha no desktop. Usa a foto local oficial de Celso
+  Sato para que a aprovação tenha contexto visual e continua isolado em uma subpágina do hub.
+  Marco atual: `/accesstage/lote3-echo/`.
 
 ---
 

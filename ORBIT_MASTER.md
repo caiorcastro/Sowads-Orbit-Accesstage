@@ -298,7 +298,8 @@ vir acompanhado de uma copy autoral de LinkedIn na voz do líder.
 - **Hashtags:** exatamente cinco, sendo marca + tema + intenção, deduplicadas e geradas pelo
   sistema após a resposta do modelo.
 - **Emojis:** nenhum por padrão; modo `subtle` libera no máximo um e apenas quando contextual.
-- **Saídas:** DOCX (um post por página), JSON auditável e preview visual integrado.
+- **Saídas:** DOCX (um post por página), JSON auditável e preview visual integrado. O preview usa
+  pares de artigo + post, dois por linha no desktop, e a foto local oficial de Celso Sato.
 - **Preview ativo:** `https://sowads-orbit.web.app/accesstage/lote3-echo/`.
 
 ### Fluxo do Echo para novos lotes

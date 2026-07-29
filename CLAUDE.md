@@ -237,7 +237,9 @@ Score mínimo para publicação: **80/100**.
 - **20 ângulos de abertura rotacionados**; cenas, clientes, números e estatísticas só podem ser usados se estiverem no artigo-fonte.
 - **Sem travessão, sem ponto e vírgula e sem cacoetes de IA** (`clean_text`). Emoji é zero por padrão; `--emoji_mode subtle` permite no máximo um, contextual.
 - Saída: **DOCX com 1 post por página + JSON de auditoria**. O código remove hashtags livres do modelo e aplica exatamente cinco hashtags deduplicadas, ligadas ao tema e à marca.
-- `tools/generate_echo_preview.py` cria a subpágina de aprovação com artigos, cards de LinkedIn, cópia de texto e download do DOCX.
+- `tools/generate_echo_preview.py` cria a subpágina de aprovação como pares artigo + post de
+  LinkedIn (dois pares por linha no desktop), com cópia de texto, download do DOCX e foto local
+  de Celso Sato em `client/personas/celso_sato.jpg`.
 - **Fluxo obrigatório: aprovar o SAMPLE com o cliente antes de gerar o lote inteiro.** Nunca gerar tudo sem OK.
 - Geradores de tema irmãos: `tools/gen_temas_aprovacao.py` (xlsx de aprovação por lote, deduplicado) e `tools/gen_temas_mes.py`.
 
@@ -247,6 +249,8 @@ Score mínimo para publicação: **80/100**.
 - Preview publicado em `https://sowads-orbit.web.app/accesstage/lote3-echo/`.
 - Entregáveis locais (gitignored): `output/celso/sowads_echo_lote3.docx`, JSON e ZIP completo.
 - Todo novo preview deve ter URL de subpasta própria, nunca substituir preview anterior.
+- A composição visual do preview é uma grade de pares: resumo com imagem do artigo à esquerda e
+  post em estilo LinkedIn à direita; há dois pares por linha em desktop e uma coluna no mobile.
 
 ## Relatório mensal de publicação (base para cruzar com Google Search Console)
 
