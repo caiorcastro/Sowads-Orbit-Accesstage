@@ -233,11 +233,20 @@ Score mínimo para publicação: **80/100**.
 ### tools/echo.py — Sowads Echo (feature de plataforma)
 
 - Transforma artigo do blog em **post autoral de LinkedIn na voz de um líder** (emulação de persona). Não é resumo — é o líder reagindo ao tema.
-- Persona atual: **Celso Sato (CEO Accesstage)**, no prompt de sistema. 9 ângulos de abertura rotacionados (nenhum post começa igual).
-- **Sem emoji, sem travessão, sem cacoetes de IA** (limpeza pós-processo `clean_text`). Modelo padrão `anthropic/claude-opus-4.7`.
-- Saída: **DOCX com 1 post por página**. `--limit N` gera amostra; `--model` troca o modelo.
+- Persona atual: **Celso Sato (CEO Accesstage)**. Fonte de comportamento: `client/personas/celso_sato.md`.
+- **20 ângulos de abertura rotacionados**; cenas, clientes, números e estatísticas só podem ser usados se estiverem no artigo-fonte.
+- **Sem travessão, sem ponto e vírgula e sem cacoetes de IA** (`clean_text`). Emoji é zero por padrão; `--emoji_mode subtle` permite no máximo um, contextual.
+- Saída: **DOCX com 1 post por página + JSON de auditoria**. O código remove hashtags livres do modelo e aplica exatamente cinco hashtags deduplicadas, ligadas ao tema e à marca.
+- `tools/generate_echo_preview.py` cria a subpágina de aprovação com artigos, cards de LinkedIn, cópia de texto e download do DOCX.
 - **Fluxo obrigatório: aprovar o SAMPLE com o cliente antes de gerar o lote inteiro.** Nunca gerar tudo sem OK.
 - Geradores de tema irmãos: `tools/gen_temas_aprovacao.py` (xlsx de aprovação por lote, deduplicado) e `tools/gen_temas_mes.py`.
+
+### Marco atual — Lote 3 + Sowads Echo (2026-07-29)
+
+- 12 artigos Lote 3 (QA 100) geraram 12 posts do Celso e pacote de aprovação.
+- Preview publicado em `https://sowads-orbit.web.app/accesstage/lote3-echo/`.
+- Entregáveis locais (gitignored): `output/celso/sowads_echo_lote3.docx`, JSON e ZIP completo.
+- Todo novo preview deve ter URL de subpasta própria, nunca substituir preview anterior.
 
 ## Relatório mensal de publicação (base para cruzar com Google Search Console)
 
@@ -264,6 +273,7 @@ Ressalvas: match por nome pode ter falso positivo/negativo (confiança <0.5 vai 
 - Nunca sobrescrever CSVs sem confirmar
 - Fixes em posts publicados: XML-RPC `wp.editPost` com regex — nunca regenerar
 - Ao final de sessão com mudanças: atualizar CLAUDE.md + commit + push
+- Atualizar também README.md, ORBIT_MASTER.md e `docs/DEPLOY_SAFETY.md` quando houver novo marco de produto, preview ou proteção operacional.
 
 ## Pendências do cliente
 

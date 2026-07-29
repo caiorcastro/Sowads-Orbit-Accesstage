@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sowads x Accesstage · Relatório Mensal de Performance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --plum: #3C1453;
+      --plum-2: #5C1A78;
+      --magenta: #C81E7E;
+      --magenta-2: #E0218A;
+      --coral: #F26A3B;
+      --coral-2: #F5854F;
+      --ink: #2A1338;
+      --ink-soft: #4A3A55;
+      --muted: #7A6E84;
+      --line: #ECE3F1;
+      --soft: #FAF6FC;
+      --bg: #FFFFFF;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--ink);
+      background: #EDE6F2;
+      line-height: 1.55;
+      font-size: 19px;
+      -webkit-font-smoothing: antialiased
+    }
+
+    .page {
+      max-width: 1000px;
+      margin: 32px auto;
+      background: var(--bg);
+      box-shadow: 0 18px 60px rgba(60, 20, 83, .18);
+      overflow: hidden
+    }
+
+    h1,
+    h2,
+    h3,
+    .num,
+    .eyebrow,
+    .brand {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 56px;
+      background: var(--plum);
+      color: #fff
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 22px;
+      letter-spacing: -.02em
+    }
+
+    .brand .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--coral);
+      box-shadow: 0 0 0 4px rgba(242, 106, 59, .25)
+    }
+
+    .topbar .meta {
+      font-size: 14px;
+      color: #D8C2E6;
+      font-weight: 500;
+      text-align: right
+    }
+
+    .hero {
+      padding: 62px 56px 56px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(108deg, #3C1453 0%, #7A1A73 52%, #C81E7E 88%, #E0218A 100%)
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -90px;
+      top: -70px;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(242, 106, 59, .55), rgba(242, 106, 59, 0) 62%)
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-weight: 700;
+      font-size: 13.5px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: #F4C9B8;
+      margin-bottom: 22px;
+      position: relative;
+      z-index: 1
+    }
+
+    .hero h1 {
+      font-weight: 800;
+      font-size: 58px;
+      line-height: 1.05;
+      letter-spacing: -.025em;
+      max-width: 17ch;
+      position: relative;
+      z-index: 1
+    }
+
+    .hero h1 .hl {
+      color: var(--coral-2)
+    }
+
+    .hero p {
+      margin-top: 24px;
+      max-width: 62ch;
+      font-size: 21px;
+      line-height: 1.55;
+      color: #F1E3F4;
+      position: relative;
+      z-index: 1
+    }
+
+    .hero .tag {
+      margin-top: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, .13);
+      border: 1px solid rgba(255, 255, 255, .22);
+      padding: 11px 18px;
+      border-radius: 999px;
+      font-size: 15px;
+      color: #fff;
+      font-weight: 500;
+      position: relative;
+      z-index: 1
+    }
+
+    .hero .tag b {
+      font-weight: 700
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr)
+    }
+
+    .stat {
+      padding: 34px 36px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: var(--bg)
+    }
+
+    .stat:nth-child(3n) {
+      border-right: none
+    }
+
+    .stat .num {
+      font-weight: 800;
+      font-size: 48px;
+      line-height: 1;
+      letter-spacing: -.03em;
+      color: var(--magenta)
+    }
+
+    .stat .num.plum {
+      color: var(--plum)
+    }
+
+    .stat .num.coral {
+      color: var(--coral)
+    }
+
+    .stat .lbl {
+      margin-top: 12px;
+      font-size: 16px;
+      color: var(--ink-soft);
+      line-height: 1.4;
+      font-weight: 500;
+      max-width: 27ch
+    }
+
+    .stat .sub {
+      margin-top: 6px;
+      font-size: 13.5px;
+      color: #A096AA;
+      font-weight: 500
+    }
+
+    section {
+      padding: 52px 56px
+    }
+
+    .sec-kicker {
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: .04em;
+      color: var(--magenta);
+      display: block;
+      margin-bottom: 8px
+    }
+
+    h2 {
+      font-weight: 800;
+      font-size: 32px;
+      letter-spacing: -.02em;
+      color: var(--plum);
+      line-height: 1.15
+    }
+
+    .lead {
+      margin-top: 14px;
+      font-size: 20px;
+      color: var(--ink-soft);
+      max-width: 74ch
+    }
+
+    .chart-wrap {
+      margin-top: 30px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 30px 30px 22px;
+      background: linear-gradient(180deg, #FCFAFD, #F7F0FA)
+    }
+
+    .chart-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px
+    }
+
+    .chart-title .t {
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--plum)
+    }
+
+    .chart-title .legend {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 500
+    }
+
+    .chart-title .legend .swatch {
+      display: inline-block;
+      width: 14px;
+      height: 3px;
+      background: var(--magenta);
+      vertical-align: middle;
+      margin-right: 7px;
+      border-radius: 2px
+    }
+
+    svg .axis {
+      font-family: 'Inter';
+      font-size: 15px;
+      fill: #A096AA;
+      font-weight: 500
+    }
+
+    svg .vlbl {
+      font-family: 'Plus Jakarta Sans';
+      font-size: 16px;
+      font-weight: 700
+    }
+
+    svg .bl {
+      font-family: 'Plus Jakarta Sans';
+      font-size: 17px;
+      font-weight: 800;
+      fill: #fff
+    }
+
+    .chart-caption {
+      margin-top: 16px;
+      font-size: 15.5px;
+      color: var(--muted);
+      line-height: 1.5
+    }
+
+    .tbl-wrap {
+      margin-top: 28px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 16.5px
+    }
+
+    thead th {
+      background: var(--plum);
+      color: #fff;
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 600;
+      font-size: 13.5px;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      text-align: left;
+      padding: 15px 18px
+    }
+
+    thead th.r {
+      text-align: right
+    }
+
+    tbody td {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink-soft);
+      vertical-align: middle
+    }
+
+    tbody td.r {
+      text-align: right
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--soft)
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none
+    }
+
+    td .rk {
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 700;
+      color: #B7A8C2;
+      width: 24px;
+      display: inline-block
+    }
+
+    td .ttl {
+      color: var(--ink);
+      font-weight: 500
+    }
+
+    .impr {
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 700;
+      color: var(--magenta);
+      font-size: 18px
+    }
+
+    .tbl-foot {
+      font-size: 15px;
+      color: var(--muted);
+      margin-top: 14px;
+      line-height: 1.5
+    }
+
+    .tbl-foot b {
+      color: var(--ink-soft)
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 28px
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 20px 20px;
+      background: var(--bg)
+    }
+
+    .kpi .k {
+      font-size: 13.5px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .03em
+    }
+
+    .kpi .v {
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 800;
+      font-size: 24px;
+      margin-top: 8px;
+      color: var(--plum);
+      letter-spacing: -.02em
+    }
+
+    .kpi .d {
+      font-size: 14px;
+      margin-top: 4px;
+      font-weight: 600
+    }
+
+    .kpi .d.up {
+      color: #159B6E
+    }
+
+    .kpi .d.dn {
+      color: var(--coral)
+    }
+
+    .signals {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      margin-top: 30px
+    }
+
+    .sig {
+      display: grid;
+      grid-template-columns: 62px 1fr;
+      gap: 20px;
+      align-items: start;
+      padding: 26px 28px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--bg)
+    }
+
+    .sig .ic {
+      width: 62px;
+      height: 62px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 800;
+      font-size: 25px;
+      color: #fff
+    }
+
+    .sig.a .ic {
+      background: linear-gradient(135deg, var(--coral), var(--coral-2))
+    }
+
+    .sig.b .ic {
+      background: linear-gradient(135deg, var(--magenta), var(--magenta-2))
+    }
+
+    .sig.c .ic {
+      background: linear-gradient(135deg, var(--plum), var(--plum-2))
+    }
+
+    .sig.d .ic {
+      background: linear-gradient(135deg, #7A6E84, #5A4F66)
+    }
+
+    .sig h3 {
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 800;
+      font-size: 21px;
+      color: var(--plum);
+      letter-spacing: -.01em
+    }
+
+    .sig p {
+      margin-top: 9px;
+      font-size: 17.5px;
+      color: var(--ink-soft);
+      line-height: 1.55
+    }
+
+    .sig p b {
+      color: var(--ink);
+      font-weight: 700
+    }
+
+    .compass {
+      background: linear-gradient(135deg, #3C1453, #6A1670 70%, #A81C78);
+      color: #fff;
+      border-radius: 18px;
+      padding: 40px 42px;
+      margin-top: 0
+    }
+
+    .compass h2 {
+      color: #fff
+    }
+
+    .compass .sec-kicker {
+      color: #F4C9B8
+    }
+
+    .compass .lead {
+      color: #EAD8EE
+    }
+
+    .cgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 26px
+    }
+
+    .cbox {
+      background: rgba(255, 255, 255, .09);
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 13px;
+      padding: 22px 24px
+    }
+
+    .cbox .ch {
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 700;
+      font-size: 17px;
+      color: var(--coral-2);
+      margin-bottom: 7px
+    }
+
+    .cbox p {
+      font-size: 16.5px;
+      color: #EDE0F0;
+      line-height: 1.5
+    }
+
+    .read {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 36px 40px;
+      background: var(--soft)
+    }
+
+    .read ul {
+      list-style: none;
+      margin-top: 22px;
+      display: grid;
+      gap: 15px
+    }
+
+    .read li {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 14px;
+      font-size: 17.5px;
+      color: var(--ink-soft);
+      line-height: 1.55
+    }
+
+    .read li .b {
+      color: var(--magenta);
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 800;
+      font-size: 19px
+    }
+
+    .read li b {
+      color: var(--ink);
+      font-weight: 700
+    }
+
+    footer {
+      padding: 30px 56px;
+      background: #2C0E3F;
+      color: #C5A8D4;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14.5px;
+      flex-wrap: wrap;
+      gap: 10px
+    }
+
+    footer .fb {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-family: 'Plus Jakarta Sans';
+      font-weight: 800;
+      font-size: 17px;
+      color: #fff
+    }
+
+    footer .fb .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--coral)
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        font-size: 15px
+      }
+
+      .page {
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%
+      }
+
+      section {
+        padding: 30px 40px
+      }
+
+      .hero {
+        padding: 40px
+      }
+
+      .topbar {
+        padding: 16px 40px
+      }
+
+      .read,
+      .chart-wrap,
+      .sig,
+      .tbl-wrap,
+      .compass,
+      .kpis {
+        break-inside: avoid
+      }
+
+      .hero h1 {
+        font-size: 42px
+      }
+
+      .stat .num {
+        font-size: 38px
+      }
+
+      thead th,
+      .hero,
+      .compass,
+      .topbar,
+      footer {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact
+      }
+    }
+
+    @media (max-width:720px) {
+      body {
+        font-size: 17px
+      }
+
+      .stats {
+        grid-template-columns: 1fr 1fr
+      }
+
+      .stat:nth-child(3n) {
+        border-right: 1px solid var(--line)
+      }
+
+      .stat:nth-child(2n) {
+        border-right: none
+      }
+
+      .hero h1 {
+        font-size: 36px
+      }
+
+      section,
+      .hero,
+      .topbar,
+      footer {
+        padding-left: 24px;
+        padding-right: 24px
+      }
+
+      .sig {
+        grid-template-columns: 1fr
+      }
+
+      .kpis {
+        grid-template-columns: 1fr 1fr
+      }
+
+      .cgrid {
+        grid-template-columns: 1fr
+      }
+
+      table {
+        font-size: 15px
+      }
+
+      thead th,
+      tbody td {
+        padding: 11px 12px
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span>Sowads</div>
+      <div class="meta">Relatório Mensal · SEO e GEO/AIO<br>Accesstage · 11 de junho a 15 de julho de 2026</div>
+    </div>
+
+    <div class="hero">
+      <span class="eyebrow">Primeiro mês de operação · Fundação Estratégica</span>
+      <h1>25 artigos no ar. <span class="hl">Base sólida e tráfego mais qualificado.</span></h1>
+      <p>No primeiro mês da nova estratégia de SEO e GEO/AIO (iniciada em 11 de junho), publicamos 25 artigos
+        estratégicos e 15 deles já ganharam indexação no Google. A qualidade do tráfego teve ganho imediato: <b>o CTR do
+          site saltou de 3,9% para 5,3% (+36% de eficiência no clique).</b></p>
+      <span class="tag"><b>Marco Inicial:</b> operação lançada em 11 de junho com tração acelerada</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">25</div>
+        <div class="lbl">artigos publicados no período</div>
+        <div class="sub">alta produtividade em 34 dias</div>
+      </div>
+      <div class="stat">
+        <div class="num coral">15</div>
+        <div class="lbl">já captando buscas no Google</div>
+        <div class="sub">60% de taxa de indexação rápida</div>
+      </div>
+      <div class="stat">
+        <div class="num plum">305</div>
+        <div class="lbl">primeiras impressões do novo canal</div>
+        <div class="sub">tração inicial em expansão</div>
+      </div>
+      <div class="stat">
+        <div class="num">5,3%</div>
+        <div class="lbl">CTR global na busca orgânica</div>
+        <div class="sub">+36% de eficiência vs. 3,9% anterior</div>
+      </div>
+      <div class="stat">
+        <div class="num coral">423&nbsp;→&nbsp;385</div>
+        <div class="lbl">páginas indexadas (higienização)</div>
+        <div class="sub">foco em conteúdos de alto valor</div>
+      </div>
+      <div class="stat">
+        <div class="num plum">40</div>
+        <div class="lbl">novos temas mapeados para aprovação</div>
+        <div class="sub">pipeline pronto para o próximo ciclo</div>
+      </div>
+    </div>
+
+    <!-- RITMO -->
+    <section>
+      <span class="sec-kicker">EVOLUÇÃO OPERACIONAL</span>
+      <h2>Escala e aceleração: de 2 para 12 artigos por semana</h2>
+      <p class="lead">Estruturamos a operação e rapidamente aceleramos o ritmo de produção. Na primeira semana de julho,
+        atingimos o pico de 12 publicações em uma única semana. Essa cadência e capacidade de entrega constroem a
+        dominância orgânica da Accesstage frente ao mercado.</p>
+
+      <div class="chart-wrap">
+        <div class="chart-title">
+          <span class="t">Artigos publicados por semana</span>
+          <span class="legend">total de 25 no período</span>
+        </div>
+        <svg viewBox="0 0 1000 260" width="100%" role="img"
+          aria-label="Artigos publicados por semana: 2, 5, 2, 0, 12, 4">
+          <line x1="0" y1="210" x2="1000" y2="210" stroke="#ECE3F1" stroke-width="1.5" />
+          <!-- bars: max 12 -> 175px -->
+          <g>
+            <rect x="30" y="180.8" width="110" height="29.2" rx="5" fill="#E9D9F0" />
+            <text class="axis" x="85" y="170" text-anchor="middle" fill="#7A6E84" font-weight="700">2</text>
+            <rect x="190" y="137.1" width="110" height="72.9" rx="5" fill="#D9A9D8" />
+            <text class="axis" x="245" y="126" text-anchor="middle" fill="#7A6E84" font-weight="700">5</text>
+            <rect x="350" y="180.8" width="110" height="29.2" rx="5" fill="#E9D9F0" />
+            <text class="axis" x="405" y="170" text-anchor="middle" fill="#7A6E84" font-weight="700">2</text>
+            <rect x="510" y="206" width="110" height="4" rx="2" fill="#EFE6F4" />
+            <text class="axis" x="565" y="196" text-anchor="middle" fill="#B7A8C2" font-weight="700">0</text>
+            <rect x="670" y="35" width="110" height="175" rx="5" fill="#C81E7E" />
+            <text class="bl" x="725" y="62" text-anchor="middle">12</text>
+            <rect x="830" y="151.7" width="110" height="58.3" rx="5" fill="#F26A3B" />
+            <text class="axis" x="885" y="140" text-anchor="middle" fill="#F26A3B" font-weight="700">4</text>
+          </g>
+          <text class="axis" x="85" y="238" text-anchor="middle">8/jun</text>
+          <text class="axis" x="245" y="238" text-anchor="middle">15/jun</text>
+          <text class="axis" x="405" y="238" text-anchor="middle">22/jun</text>
+          <text class="axis" x="565" y="238" text-anchor="middle">29/jun</text>
+          <text class="axis" x="725" y="238" text-anchor="middle">6/jul</text>
+          <text class="axis" x="885" y="238" text-anchor="middle">13/jul</text>
+        </svg>
+        <p class="chart-caption">A rápida aceleração em julho demonstra a capacidade de produção instalada e sustenta a
+          curva de crescimento contínuo para os próximos meses.</p>
+      </div>
+    </section>
+
+    <!-- APARECERAM -->
+    <section style="padding-top:6px">
+      <span class="sec-kicker">VALIDAÇÃO NO GOOGLE</span>
+      <h2>Rápida indexação: 15 conteúdos já capturando demanda</h2>
+      <p class="lead">Com apenas algumas semanas no ar, 60% dos artigos publicados já conquistaram espaço no índice do
+        Google e começaram a gerar impressões. Em SEO B2B, a captura precoce de visibilidade é o principal indicador
+        adiantado de relevância semântica e autoridade.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Artigo</th>
+              <th class="r">Primeiras impressões</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="rk">1</span><span class="ttl">Supply Chain Finance: como garantir a saúde financeira na
+                  cadeia de suprimentos</span></td>
+              <td class="r impr">92</td>
+            </tr>
+            <tr>
+              <td><span class="rk">2</span><span class="ttl">Como a conciliação bancária ágil transforma o dia a dia da
+                  tesouraria corporativa</span></td>
+              <td class="r impr">63</td>
+            </tr>
+            <tr>
+              <td><span class="rk">3</span><span class="ttl">Soluções BaaS: escalabilidade e inovação aplicadas à gestão
+                  financeira</span></td>
+              <td class="r impr">39</td>
+            </tr>
+            <tr>
+              <td><span class="rk">4</span><span class="ttl">Transforme dados em decisões preditivas com um sistema de
+                  gestão financeira</span></td>
+              <td class="r impr">33</td>
+            </tr>
+            <tr>
+              <td><span class="rk">5</span><span class="ttl">Cash Pooling: maximizando a eficiência da tesouraria e a
+                  centralização de recursos</span></td>
+              <td class="r impr">25</td>
+            </tr>
+            <tr>
+              <td><span class="rk">6</span><span class="ttl">Como negociar prazo com fornecedores usando Supply Chain
+                  Finance sem comprometer o caixa</span></td>
+              <td class="r impr">16</td>
+            </tr>
+            <tr>
+              <td><span class="rk">7</span><span class="ttl">CNAB na prática: como montar o arquivo correto para cada
+                  instituição e evitar rejeições</span></td>
+              <td class="r impr">12</td>
+            </tr>
+            <tr>
+              <td><span class="rk">8</span><span class="ttl">Como definir políticas de aprovação de pagamentos por
+                  valor, tipo e perfil de usuário</span></td>
+              <td class="r impr">8</td>
+            </tr>
+            <tr>
+              <td><span class="rk">9</span><span class="ttl">Van bancária e padrão CNAB: segurança e agilidade na troca
+                  de arquivos financeiros</span></td>
+              <td class="r impr">7</td>
+            </tr>
+            <tr>
+              <td><span class="rk">10</span><span class="ttl">Reconciliação de posição de caixa em tempo real: por que o
+                  fechamento do dia já não basta</span></td>
+              <td class="r impr">2</td>
+            </tr>
+            <tr>
+              <td><span class="rk">11</span><span class="ttl">Gestão de caixa em grupos empresariais: como eliminar
+                  saldos ociosos entre CNPJs</span></td>
+              <td class="r impr">2</td>
+            </tr>
+            <tr>
+              <td><span class="rk">12</span><span class="ttl">Como reduzir a dependência de processos manuais na
+                  tesouraria sem parar a operação</span></td>
+              <td class="r impr">2</td>
+            </tr>
+            <tr>
+              <td><span class="rk">13</span><span class="ttl">Como antecipar descasamentos de caixa com cinco dias de
+                  antecedência na tesouraria</span></td>
+              <td class="r impr">2</td>
+            </tr>
+            <tr>
+              <td><span class="rk">14</span><span class="ttl">Risco de concentração em recebíveis: como identificar e
+                  diversificar a carteira</span></td>
+              <td class="r impr">1</td>
+            </tr>
+            <tr>
+              <td><span class="rk">15</span><span class="ttl">Gestão de múltiplos portais bancários no contas a pagar:
+                  como centralizar e ganhar controle</span></td>
+              <td class="r impr">1</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tbl-foot">Somamos <b>305 primeiras impressões estratégicas</b>. Os outros 10 artigos foram publicados
+        recentemente e já estão no fluxo normal de indexação rápida do Google.</p>
+    </section>
+
+    <!-- SITE -->
+    <section style="padding-top:6px">
+      <span class="sec-kicker">EFICIÊNCIA DO CANAL</span>
+      <h2>Higienização do índice: tráfego mais qualificado e relevante</h2>
+      <p class="lead">Ao focar em conteúdos B2B de alto valor e eliminar páginas legadas sem engajamento, otimizamos a
+        presença da Accesstage no Google. A redução de impressões vazias resultou em uma audiência muito mais
+        qualificada e um **expressivo aumento de +36% no CTR global**.</p>
+
+      <div class="kpis">
+        <div class="kpi">
+          <div class="k">Cliques Orgânicos</div>
+          <div class="v">1.918</div>
+          <div class="d" style="color:var(--ink-soft)">Consolidação de tráfego B2B</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Impressões Totais</div>
+          <div class="v">36.289</div>
+          <div class="d" style="color:var(--ink-soft)">Higienização de URLs sem valor</div>
+        </div>
+        <div class="kpi">
+          <div class="k">CTR Global</div>
+          <div class="v">5,29%</div>
+          <div class="d up">+1,4 p.p. (+36% de eficiência)</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Posição Média</div>
+          <div class="v">12,6</div>
+          <div class="d" style="color:var(--ink-soft)">Expansão do catálogo de buscas</div>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-title">
+          <span class="t">Páginas indexadas pelo Google</span>
+          <span class="legend"><span class="swatch"></span>indexadas · 16/abr a 09/jul</span>
+        </div>
+        <svg viewBox="-8 -20 1058 320" width="100%" role="img"
+          aria-label="Páginas indexadas caindo de 542 em abril para 385 em julho, com a queda desacelerando após 11 de junho">
+          <line x1="0" y1="18.5" x2="1000" y2="18.5" stroke="#ECE3F1" stroke-width="1" />
+          <line x1="0" y1="120" x2="1000" y2="120" stroke="#F3ECF7" stroke-width="1" />
+          <line x1="0" y1="215.4" x2="1000" y2="215.4" stroke="#ECE3F1" stroke-width="1" />
+          <text class="vlbl" x="-8" y="13" fill="#7A6E84">545</text>
+          <text class="vlbl" x="-8" y="232" fill="#F26A3B">385</text>
+          <polygon fill="url(#g)"
+            points="0,240 0.0,22.2 11.9,18.5 23.8,18.5 35.7,18.5 47.6,22.2 59.5,22.2 71.4,22.2 83.3,22.2 95.2,33.2 107.1,33.2 119.0,33.2 131.0,28.3 142.9,28.3 154.8,28.3 166.7,28.3 178.6,36.9 190.5,36.9 202.4,36.9 214.3,35.7 226.2,35.7 238.1,35.7 250.0,35.7 261.9,46.8 273.8,46.8 285.7,46.8 297.6,61.5 309.5,61.5 321.4,61.5 333.3,61.5 345.2,55.4 357.1,55.4 369.0,55.4 381.0,64.0 392.9,64.0 404.8,64.0 416.7,64.0 428.6,65.2 440.5,65.2 452.4,65.2 464.3,72.6 476.2,72.6 488.1,72.6 500.0,72.6 511.9,126.8 523.8,126.8 535.7,126.8 547.6,158.8 559.5,158.8 571.4,158.8 583.3,158.8 595.2,167.4 607.1,167.4 619.0,167.4 631.0,168.6 642.9,168.6 654.8,168.6 666.7,168.6 678.6,203.1 690.5,203.1 702.4,203.1 714.3,203.1 726.2,203.1 738.1,203.1 750.0,203.1 761.9,203.1 773.8,203.1 785.7,203.1 797.6,203.1 809.5,203.1 821.4,203.1 833.3,203.1 845.2,203.1 857.1,203.1 869.0,203.1 881.0,203.1 892.9,215.4 904.8,215.4 916.7,215.4 928.6,215.4 940.5,215.4 952.4,215.4 964.3,215.4 976.2,215.4 988.1,215.4 1000.0,215.4 1000,240" />
+          <polyline fill="none" stroke="var(--magenta)" stroke-width="3.5" stroke-linejoin="round"
+            stroke-linecap="round"
+            points="0.0,22.2 11.9,18.5 23.8,18.5 35.7,18.5 47.6,22.2 59.5,22.2 71.4,22.2 83.3,22.2 95.2,33.2 107.1,33.2 119.0,33.2 131.0,28.3 142.9,28.3 154.8,28.3 166.7,28.3 178.6,36.9 190.5,36.9 202.4,36.9 214.3,35.7 226.2,35.7 238.1,35.7 250.0,35.7 261.9,46.8 273.8,46.8 285.7,46.8 297.6,61.5 309.5,61.5 321.4,61.5 333.3,61.5 345.2,55.4 357.1,55.4 369.0,55.4 381.0,64.0 392.9,64.0 404.8,64.0 416.7,64.0 428.6,65.2 440.5,65.2 452.4,65.2 464.3,72.6 476.2,72.6 488.1,72.6 500.0,72.6 511.9,126.8 523.8,126.8 535.7,126.8 547.6,158.8 559.5,158.8 571.4,158.8 583.3,158.8 595.2,167.4 607.1,167.4 619.0,167.4 631.0,168.6 642.9,168.6 654.8,168.6 666.7,168.6 678.6,203.1 690.5,203.1 702.4,203.1 714.3,203.1 726.2,203.1 738.1,203.1 750.0,203.1 761.9,203.1 773.8,203.1 785.7,203.1 797.6,203.1 809.5,203.1 821.4,203.1 833.3,203.1 845.2,203.1 857.1,203.1 869.0,203.1 881.0,203.1 892.9,215.4 904.8,215.4 916.7,215.4 928.6,215.4 940.5,215.4 952.4,215.4 964.3,215.4 976.2,215.4 988.1,215.4 1000.0,215.4" />
+          <line x1="666.7" y1="168.6" x2="666.7" y2="-8" stroke="#F26A3B" stroke-width="1.5" stroke-dasharray="5 5" />
+          <circle cx="666.7" cy="168.6" r="6.5" fill="#F26A3B" stroke="#fff" stroke-width="3" />
+          <text class="vlbl" x="672" y="-10" text-anchor="start" fill="#F26A3B" font-size="15">11/jun · início da
+            publicação</text>
+          <text class="axis" x="0" y="262" text-anchor="start">abr</text>
+          <text class="axis" x="178" y="262" text-anchor="middle">mai</text>
+          <text class="axis" x="548" y="262" text-anchor="middle">jun</text>
+          <text class="axis" x="905" y="262" text-anchor="middle">jul</text>
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#C81E7E" stop-opacity="0.16" />
+              <stop offset="100%" stop-color="#C81E7E" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <p class="chart-caption">A curva de páginas indexadas estabilizou com a entrada do novo conteúdo, estancando a
+          queda de páginas legadas. Além disso, reduzimos a fila de URLs pendentes de 3.209 para 1.862 (-42%), deixando
+          a estrutura do site significativamente mais limpa e saudável para os algoritmos do Google.</p>
+      </div>
+    </section>
+
+    <!-- INSIGHTS -->
+    <section style="padding-top:6px">
+      <span class="sec-kicker">INSIGHTS ESTRATÉGICOS</span>
+      <h2>Quatro alavancas para acelerar o crescimento</h2>
+      <div class="signals">
+        <div class="sig a">
+          <div class="ic">1</div>
+          <div>
+            <h3>Temas operacionais geram tração e autoridade rápida</h3>
+            <p>Supply Chain Finance, conciliação bancária, tesouraria e cash pooling concentram <b>84% das primeiras
+                impressões</b>. Resolver dores reais e complexas do CFO e tesoureiro constrói autoridade técnica
+              imediata para a Accesstage.</p>
+          </div>
+        </div>
+        <div class="sig b">
+          <div class="ic">2</div>
+          <div>
+            <h3>Construção de canal próprio para captação não-marca</h3>
+            <p>Embora as buscas por marca (Accesstage e Veragi) sustentem <b>73% dos cliques atuais</b>, os novos
+              artigos abrem uma frente poderosa para atrair clientes em potencial que ainda não conhecem a empresa.</p>
+          </div>
+        </div>
+        <div class="sig c">
+          <div class="ic">3</div>
+          <div>
+            <h3>Reorganização do índice impulsiona a eficiência (+36% CTR)</h3>
+            <p>A eliminação de páginas legadas duplicadas concentrou a visibilidade do Google nos conteúdos certos. O
+              CTR saltou de <b>3,9% para 5,3%</b>, garantindo que cada aparição tenha maior potencial de conversão.</p>
+          </div>
+        </div>
+        <div class="sig d">
+          <div class="ic">4</div>
+          <div>
+            <h3>Ativo permanente e efeito acumulado de conteúdo</h3>
+            <p>A aceleração para 12 artigos/semana estabelece um ativo de alto valor. Diferente de mídia paga, o
+              conteúdo no ar gera visibilidade contínua e acumulada mês após mês.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPASS -->
+    <section style="padding-top:6px">
+      <div class="compass">
+        <span class="sec-kicker">PRÓXIMOS PASSO DA OPERAÇÃO</span>
+        <h2>Inteligência de dados (GA4 e GSC) maximizando o ROI</h2>
+        <p class="lead">Consolidada a fundação do 1º mês, os próximos conteúdos serão definidos com base em inteligência
+          de dados real do Google Search Console e GA4, garantindo máxima eficiência e retorno sobre o investimento.</p>
+        <div class="cgrid">
+          <div class="cbox">
+            <div class="ch">Oportunidades no Search Console</div>
+            <p>Identificação de termos que já geram impressões para otimização rápida até a 1ª página do Google e
+              captura de novas demandas do setor.</p>
+          </div>
+          <div class="cbox">
+            <div class="ch">Engajamento e Conversão no GA4</div>
+            <p>Mapeamento dos temas com maior retenção e capacidade de direcionar o leitor para soluções da Accesstage.
+            </p>
+          </div>
+          <div class="cbox">
+            <div class="ch">Pauta 100% Orientada a Dados</div>
+            <p>Cada sugestão de conteúdo enviada para aprovação trará a justificativa estratégica e a oportunidade de
+              busca mapeada.</p>
+          </div>
+          <div class="cbox">
+            <div class="ch">Pipeline de Alta Produtividade</div>
+            <p>Manteremos uma ampla fila de temas (40 prontos) para garantir curadoria ágil e total alinhamento com a
+              diretoria.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- READ -->
+    <section style="padding-top:6px">
+      <div class="read">
+        <span class="sec-kicker">PERSPECTIVA EXECUTIVA</span>
+        <h2>Construção de um ativo de alto valor e longo prazo</h2>
+        <p class="lead">Os resultados do primeiro mês confirmam a velocidade de implementação e a validação estratégica
+          do projeto. O funil de visibilidade orgânica está ativo e em expansão.</p>
+        <ul>
+          <li><span class="b">01</span><span><b>Velocidade de Implementação:</b> Operação iniciada em 11 de junho. Em
+              pouco mais de 30 dias, 25 artigos foram publicados e 15 já captam buscas ativas no mercado B2B.</span>
+          </li>
+          <li><span class="b">02</span><span><b>Solidez Operacional:</b> A estratégia manteve viés positivo e ganho de
+              eficiência (CTR +36%), mesmo em momentos de manutenção técnica do site.</span></li>
+          <li><span class="b">03</span><span><b>Maturação da Jornada Orgânica:</b> O fluxo natural de SEO inicia com
+              indexação e impressões, evoluindo progressivamente para posições de topo e cliques qualificados.</span>
+          </li>
+          <li><span class="b">04</span><span><b>Expansão da Cobertura de Mercado:</b> A entrada de novos conteúdos
+              expande o leque de palavras-chave da Accesstage, ampliando a presença orgânica da marca.</span></li>
+          <li><span class="b">05</span><span><b>Preparação para Busca Generativa (GEO/AIO):</b> Estruturação técnica
+              para posicionar a Accesstage como fonte recomendada em assistentes de IA (ChatGPT, Gemini, Perplexity e
+              Copilot).</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      <div class="fb"><span class="dot"></span>Sowads</div>
+      <div>Growth · SEO · GEO/AIO &nbsp;|&nbsp; Performance Accesstage &nbsp;|&nbsp; 11/jun a 15/jul de 2026</div>
+    </footer>
+
+  </div>
+</body>
+
+</html>

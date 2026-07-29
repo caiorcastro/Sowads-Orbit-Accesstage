@@ -284,3 +284,40 @@ python3 engine/qa_validator.py --path "output/articles/*.csv"
 | Restrições específicas de claims técnicos | A receber |
 | Campanhas ativas + calendário promocional | A receber |
 | Credenciais reais em `client/credentials.env` | A preencher |
+
+---
+
+## 15. Marco — Sowads Echo e Lote 3 (2026-07-29)
+
+O **Sowads Echo** passou a ser uma entrega complementar do Orbit: cada artigo aprovado pode
+vir acompanhado de uma copy autoral de LinkedIn na voz do líder.
+
+- **Persona atual:** Celso Sato, CEO da Accesstage (`client/personas/celso_sato.md`).
+- **Variação:** 20 ângulos de abertura; não repetir estruturas por ciclo e não inventar cenas,
+  falas de clientes ou estatísticas ausentes no artigo.
+- **Hashtags:** exatamente cinco, sendo marca + tema + intenção, deduplicadas e geradas pelo
+  sistema após a resposta do modelo.
+- **Emojis:** nenhum por padrão; modo `subtle` libera no máximo um e apenas quando contextual.
+- **Saídas:** DOCX (um post por página), JSON auditável e preview visual integrado.
+- **Preview ativo:** `https://sowads-orbit.web.app/accesstage/lote3-echo/`.
+
+### Fluxo do Echo para novos lotes
+
+```bash
+python3 tools/echo.py \
+  --csv output/articles/<lote>.csv \
+  --url_dir output/accesstage-site/<lote> \
+  --url_base https://sowads-orbit.web.app/accesstage/<subpagina> \
+  --out output/celso/sowads_echo_<lote>.docx \
+  --json_out output/celso/sowads_echo_<lote>.json \
+  --limit N
+
+python3 tools/generate_echo_preview.py \
+  --csv output/articles/<lote>.csv \
+  --echo_json output/celso/sowads_echo_<lote>.json \
+  --source_dir output/accesstage-site/<lote> \
+  --out_dir output/preview/accesstage/<subpagina> \
+  --docx output/celso/sowads_echo_<lote>.docx
+```
+
+Antes de gerar o lote inteiro, sempre rodar `--limit N` e aprovar a amostra.

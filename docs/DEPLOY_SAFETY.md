@@ -9,15 +9,17 @@ sowads-orbit.web.app/
 ├── index.html            ← landing "Hub de Previews"
 ├── accesstage/           ← preview Accesstage (nosso)
 ├── omt/                  ← Oh My Travel
-├── precolandia/          ← Preçolandia  (inclui precolandia/blog_lote2/ !)
+├── precolandia/          ← Preçolandia  (inclui subpastas aninhadas `r-205cd6b2bf/blog_lote2/` e `blog_lote3/`)
 └── simuladinheiro/       ← SimulaDinheiro
 ```
 
 O target `accesstage` no `firebase.json` tem `public: output/preview`. **`firebase deploy` substitui o site INTEIRO** pelo conteúdo de `output/preview`. Se `output/preview` local não contiver TODOS os clientes (e todas as subpastas aninhadas, como `precolandia/blog_lote2/`), o deploy **apaga** o que faltar.
 
-## Incidente (jul/2026)
+## Incidente e recuperação (jul/2026)
 
-Um deploy de `output/preview` incompleto derrubou `precolandia/blog_lote2/` (92 arquivos). O espelhamento que reconstruiu o hub seguiu só os links do `index.html` de cada cliente e **não descobriu subpastas aninhadas** que não estavam linkadas no index. Resultado: 404 em conteúdo de outro cliente.
+Um deploy de `output/preview` incompleto derrubou conteúdo aninhado da Preçolandia. O espelhamento que reconstruiu o hub seguiu só os links do `index.html` de cada cliente e **não descobriu subpastas aninhadas** que não estavam linkadas no index. Resultado: 404 em conteúdo de outro cliente.
+
+Em 29/07/2026, o `safe_deploy.py` bloqueou corretamente um novo deploy porque havia 746 paths live ausentes localmente. O procedimento `tools/mirror_live_preview.py` recompôs esses arquivos diretamente da release ativa, **sem apagar ou sobrescrever** arquivos locais; só depois a paridade permitiu o deploy do Lote 3 + Sowads Echo.
 
 ## Regras (invioláveis)
 
@@ -25,6 +27,7 @@ Um deploy de `output/preview` incompleto derrubou `precolandia/blog_lote2/` (92 
 2. Deploy só via **`python3 tools/safe_deploy.py <target>`**, que compara o local com TODOS os arquivos que estão no ar (API de versões) e **recusa** se algum caminho live sumiria.
 3. Sempre `--only hosting:<target>` — nunca deploy sem escopo, nunca `--only hosting` sem target.
 4. Verificar pós-deploy pelo **conteúdo** (curl + grep de títulos), não só HTTP 200 — o CDN ignora query string, então `?cache-bust` não fura cache.
+5. Se o `safe_deploy.py` indicar paths ausentes, **nunca** usar `--allow-removals` para contornar. Primeiro rodar `python3 tools/mirror_live_preview.py` para baixar somente os arquivos ausentes da release ativa, depois repetir o deploy seguro.
 
 ## Rollback de emergência (restaurar versão íntegra)
 
@@ -50,3 +53,16 @@ Precisa de `gcloud` autenticado (Application Default Credentials) + header `X-Go
 2. Trocar/atualizar apenas a subpasta do cliente alvo (ex.: `output/preview/accesstage/`).
 3. `python3 tools/safe_deploy.py accesstage` — ele confirma paridade e só então deploya.
 4. Verificar por conteúdo cada cliente.
+
+### Recuperar paridade local sem perder arquivos
+
+```bash
+# Apenas diagnostica os arquivos live que faltam localmente
+python3 tools/mirror_live_preview.py --dry-run
+
+# Baixa somente os paths ausentes da release ativa; não remove nem sobrescreve
+python3 tools/mirror_live_preview.py
+
+# Só então o deploy seguro poderá seguir
+python3 tools/safe_deploy.py accesstage
+```

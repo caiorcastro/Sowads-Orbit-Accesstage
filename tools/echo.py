@@ -15,7 +15,7 @@ Uso:
       --url_base https://sowads-accesstage.web.app/<lote> \
       --out output/echo/sowads_echo_<lote>.docx [--limit N] [--model <id>]
 """
-import os, re, csv, glob, html, argparse, time
+import os, re, csv, glob, html, json, argparse, time
 import requests
 from dotenv import load_dotenv
 from docx import Document
@@ -34,7 +34,7 @@ NÃO resuma o artigo. Use o tema como trampolim para a SUA visão de líder. O l
 
 VOZ (obrigatória):
 - Primeira pessoa e "nós". Caloroso, otimista, grato, mas com PONTO DE VISTA claro e firme.
-- Comece por algo concreto e vivo (uma cena, uma fala de cliente, um número, uma tese) — nunca por conceito genérico.
+- Comece por algo concreto e vivo (uma cena, uma fala de cliente, um número, uma tese) — nunca por conceito genérico. Só use cena, fala, número ou caso específico quando ele estiver explicitamente no artigo. Caso contrário, trate-o como hipótese geral, sem inventar fonte, cliente ou estatística.
 - Extraia UM princípio de liderança memorável (uma frase que gruda).
 - Traduza o técnico (conciliação, risco sacado, capital de giro, IA, Open Finance) em benefício humano: tempo, previsibilidade, sono tranquilo, menos dor.
 - Credite pessoas quando fizer sentido (time "AccessLovers", clientes).
@@ -52,26 +52,66 @@ HUMANIDADE (tem que parecer escrito por uma PESSOA, não por IA):
 - Sem cacoetes de IA: nada de "não é X, é Y" / "não é sobre X, mas sobre Y"; nada de listas de três toda hora; nada de scaffolding tipo "Minha tese é:", "Aqui vai minha tese:", "O que muda na prática:", "Minha convicção é esta:", "Isso não é teoria. É...", "Simples. Direta. Verdadeira."
 - Escreva fluido e humano, com imperfeição natural. Nada de parágrafos milimetricamente paralelos. Português-BR impecável.
 
-REGRAS: nunca copie frases literais do artigo. Nunca soe como release ("A Accesstage anuncia"). Sem venda agressiva, sem polêmica. Sem emojis. Parágrafos curtos (1–3 frases), com linha em branco entre eles. 600–1300 caracteres. Sempre inclua o link do artigo e 3–5 hashtags do tema.
+REGRAS: nunca copie frases literais do artigo. Nunca soe como release ("A Accesstage anuncia"). Sem venda agressiva, sem polêmica. Sem emojis, salvo se a instrução do usuário liberar explicitamente um único emoji contextual. Parágrafos curtos (1–3 frases), com linha em branco entre eles. 600–1300 caracteres. Inclua o link do artigo, mas NÃO inclua hashtags: elas são selecionadas e validadas pelo sistema.
 
 Bordões que pode usar com naturalidade (sem empilhar): "colocar as pessoas no centro", "construindo, juntos", "empresa longeva", "crescimento sustentável", "resultados através de pessoas felizes", "vestir a camisa", "Quer ir rápido, vá sozinho; quer ir longe, vá com um time".
 
 Hashtags disponíveis (escolha 3–5 por tema): #Accesstage #GrupoAccesstage #GestãoFinanceira #Tesouraria #ClienteNoCentro #RiscoSacado #AntecipacaoDeRecebiveis #CapitalDeGiro #TecnologiaFinanceira #CrescimentoSustentavel #MercadoFinanceiro #Inovacao #OpenFinance
 
-OUTPUT: apenas o texto final do post, pronto para publicar (com link e hashtags). Sem rótulos, sem aspas ao redor."""
+OUTPUT: apenas o texto final do post, pronto para publicar (com link e sem hashtags). Sem rótulos, sem aspas ao redor."""
 
 # Ângulos de abertura rotacionados (garante variação real entre posts)
 OPENING_ANGLES = [
     "TESE PROVOCATIVA: abra com uma afirmação forte e contra-intuitiva sobre o tema (ex.: 'Tesouraria não é sobre fechar o caixa.').",
     "FALA DE CLIENTE: abra com uma cena/fala real de um CFO ou gestor que você ouviu ('Um cliente me disse uma frase esses dias que não saiu da minha cabeça: ...').",
-    "NÚMERO/FATO DE MERCADO: abra com um dado ou movimento de mercado que surpreende, ligado ao tema.",
+    "NÚMERO/FATO DE MERCADO: use somente um dado que esteja no artigo; se não houver, substitua por uma consequência observável do tema.",
     "CONTRASTE ANTES/DEPOIS: abra mostrando como era antes e como é hoje.",
     "APRENDIZADO PESSOAL: abra com uma confissão/lição sua ('Levei tempo pra entender que...').",
     "PERGUNTA DE ENTRADA: abra com uma pergunta direta e instigante na primeira linha.",
     "BASTIDOR DO TIME: abra por algo que o time (AccessLovers) viveu ou construiu.",
     "OPINIÃO FIRME: abra reto, sem rodeio ('Vou ser direto sobre [tema]:').",
     "CENA DE REUNIÃO/EVENTO: abra numa conversa com clientes/parceiros (sem ser 'de manhã lendo').",
+    "ERRO CARO: abra com um erro operacional recorrente e a consequência que ele cria para o caixa ou para o time.",
+    "DECISÃO DE CONSELHO: abra pelo tipo de pergunta que uma liderança precisa responder antes de tomar uma decisão financeira.",
+    "SINAL FRACO: abra por um pequeno sintoma operacional que costuma revelar um problema maior.",
+    "MITO DE MERCADO: abra desmontando uma crença comum sobre o tema, sem criar antagonismo artificial.",
+    "CUSTO INVISÍVEL: abra pelo tempo, risco ou previsibilidade que se perde quando a operação continua manual.",
+    "PRIMEIRA HORA DO DIA: abra pelo que um CFO ou tesoureiro deveria conseguir enxergar logo cedo.",
+    "PERGUNTA DE DIAGNÓSTICO: abra com uma pergunta que ajude o leitor a medir a maturidade da própria operação.",
+    "PRINCÍPIO DE CASA: abra por uma convicção de liderança, conectando-a ao tema sem repetir bordões.",
+    "MUDANÇA DE ESCALA: abra pelo ponto em que um processo deixa de funcionar porque a empresa cresceu.",
+    "EFEITO EM CADEIA: abra mostrando como uma falha pequena se propaga para risco, caixa ou relacionamento.",
+    "FUTURO PRÓXIMO: abra pelo que muda na rotina quando a empresa passa a operar com mais visibilidade e integração.",
 ]
+
+HASHTAG_RULES = [
+    ("open finance", ["#OpenFinance", "#IntegraçãoBancária", "#TecnologiaFinanceira"]),
+    ("api", ["#APIs", "#IntegraçãoBancária", "#TecnologiaFinanceira"]),
+    ("dashboard", ["#CFO", "#AnalyticsFinanceiro", "#DadosEmTempoReal"]),
+    ("governança", ["#GovernançaFinanceira", "#Compliance", "#ControlesInternos"]),
+    ("dívida", ["#CréditoCorporativo", "#CapitalDeGiro", "#GestãoDeDívidas"]),
+    ("crédito", ["#CréditoCorporativo", "#CapitalDeGiro", "#MercadoFinanceiro"]),
+    ("cobrança", ["#ContasAReceber", "#Inadimplência", "#FluxoDeCaixa"]),
+    ("risco sacado", ["#RiscoSacado", "#CapitalDeGiro", "#SupplyChainFinance"]),
+    ("aprova", ["#ContasAPagar", "#AutomaçãoFinanceira", "#Rastreabilidade"]),
+    ("conciliação", ["#ConciliaçãoFinanceira", "#ContasAPagar", "#AutomaçãoFinanceira"]),
+    ("tesouraria", ["#Tesouraria", "#FluxoDeCaixa", "#GestãoFinanceira"]),
+]
+
+def select_hashtags(title, body, limit=5):
+    """Mantém marca + tema do artigo, com 3–5 hashtags verificáveis e sem repetição."""
+    text = f"{title} {body}".lower()
+    tags = ["#Accesstage", "#GestãoFinanceira"]
+    for keyword, candidates in HASHTAG_RULES:
+        if keyword in text:
+            tags.extend(candidates)
+    if len(tags) < 5:
+        tags.extend(["#TecnologiaFinanceira", "#EficiênciaOperacional", "#CrescimentoSustentável"])
+    unique = []
+    for tag in tags:
+        if tag not in unique:
+            unique.append(tag)
+    return unique[:limit]
 
 def strip_html(s):
     s = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", s, flags=re.S | re.I)
@@ -94,11 +134,16 @@ def clean_text(t):
         out.append(line)
     return "\n".join(out)
 
-def gen_post(title, body, url, angle, model):
+def gen_post(title, body, url, angle, model, emoji_mode="none"):
+    emoji_instruction = (
+        "Você pode usar no máximo UM emoji, apenas se fizer sentido emocionalmente e nunca em post técnico."
+        if emoji_mode == "subtle" else "Não use emojis."
+    )
     usr = (f"INPUT — Artigo do blog:\nTÍTULO: {title}\n\nCORPO (resumo textual): {body[:1800]}\n\nURL: {url}\n\n"
            f"ÂNGULO DE ABERTURA OBRIGATÓRIO para este post: {angle}\n"
            f"Lembre: NÃO comece com 'comecei a manhã/dia/semana' nem diga que leu um artigo. "
-           f"Escreva com energia e opinião, diferente de um post padrão. Gere agora o post do Celso.")
+           f"Escreva com energia e opinião, diferente de um post padrão. {emoji_instruction} "
+           f"Não inclua hashtags, pois o sistema as adicionará. Gere agora o post do Celso.")
     for _ in range(3):
         try:
             r = requests.post(URL, headers={"Authorization": f"Bearer {KEY}"},
@@ -120,6 +165,9 @@ def main():
     ap.add_argument("--lote", default="Lote 2")
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--limit", type=int, default=0, help="0 = todos; N = só os N primeiros (amostra)")
+    ap.add_argument("--json_out", help="Arquivo JSON com posts para preview e auditoria")
+    ap.add_argument("--emoji_mode", choices=["none", "subtle"], default="none",
+                    help="none (padrão) ou subtle (no máximo 1 emoji contextual)")
     a = ap.parse_args()
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
 
@@ -136,6 +184,7 @@ def main():
     doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
 
     ok = 0
+    generated_posts = []
     for i, row in enumerate(rows):
         title = row.get("post_title", "").strip()
         body = strip_html(row.get("post_content", "") or row.get("meta_description", ""))
@@ -143,10 +192,23 @@ def main():
         url = f"{a.url_base}/{fname}" if fname else a.url_base
         angle = OPENING_ANGLES[i % len(OPENING_ANGLES)]
         print(f"[{i+1}/{len(rows)}] {title[:46]} | {angle.split(':')[0]}")
-        post = gen_post(title, body, url, angle, a.model)
+        post = gen_post(title, body, url, angle, a.model, a.emoji_mode)
         if not post:
             print("   ✗ falhou"); continue
         post = clean_text(post)
+        # O modelo é instruído a não gerar hashtags; removemos qualquer sobra e aplicamos
+        # uma seleção rastreável baseada no tema real do artigo.
+        post = re.sub(r"(?m)^\s*#[^\n]+\n?", "", post).strip()
+        hashtags = select_hashtags(title, body)
+        post = f"{post}\n\n{' '.join(hashtags)}"
+        generated_posts.append({
+            "number": i + 1,
+            "title": title,
+            "url": url,
+            "angle": angle.split(":", 1)[0],
+            "copy": post,
+            "hashtags": hashtags,
+        })
         # rótulo de referência (cinza, pequeno)
         lab = doc.add_paragraph(); lr = lab.add_run(f"POST {i+1} · baseado em: {title}")
         lr.italic = True; lr.font.size = Pt(9); lr.font.color.rgb = RGBColor(0x88,0x88,0x88)
@@ -159,6 +221,11 @@ def main():
         time.sleep(0.2)
 
     doc.save(a.out)
+    if a.json_out:
+        os.makedirs(os.path.dirname(a.json_out) or ".", exist_ok=True)
+        with open(a.json_out, "w", encoding="utf-8") as f:
+            json.dump({"persona": "Celso Sato", "lote": a.lote, "posts": generated_posts}, f,
+                      ensure_ascii=False, indent=2)
     print(f"\n✓ {ok}/{len(rows)} posts | DOCX: {a.out}")
 
 if __name__ == "__main__":

@@ -180,20 +180,25 @@ Pega um artigo do blog e o transforma num **post autoral de LinkedIn** por **emu
 python3 tools/echo.py \
   --csv output/articles/<batch>.csv \
   --url_dir output/accesstage-site/<lote> \
-  --url_base https://sowads-accesstage.web.app/<lote> \
-  --out output/echo/sowads_echo_<lote>.docx \
-  [--limit N] [--model <id>]
+  --url_base https://sowads-orbit.web.app/accesstage/<subpagina> \
+  --out output/celso/sowads_echo_<lote>.docx \
+  --json_out output/celso/sowads_echo_<lote>.json \
+  [--limit N] [--model <id>] [--emoji_mode none|subtle]
 ```
 
 Como funciona:
-- **Persona configurável** (hoje: Celso Sato, CEO Accesstage) no prompt de sistema do `echo.py`.
-- **9 ângulos de abertura rotacionados** (tese, fala de cliente, número, contraste, opinião firme…)
-  para nenhum post começar igual ao outro.
+- **Persona documentada e configurável** (hoje: Celso Sato, CEO Accesstage) em
+  `client/personas/celso_sato.md` e no prompt do `echo.py`.
+- **20 ângulos de abertura rotacionados** (tese, erro caro, sinal fraco, decisão de conselho,
+  contraste, opinião firme…) para reduzir repetição entre lotes.
 - **Voz humana, sem cara de IA**: 1ª pessoa, insight de liderança, técnico traduzido em benefício
-  humano, fecho com pergunta, link + hashtags. **Sem emoji, sem travessão, sem cacoetes de IA**
-  (há limpeza pós-processo que remove travessão/`;` e normaliza pontuação).
+  humano, fecho com pergunta e link direto ao artigo. **Cinco hashtags validadas por tema** são
+  adicionadas pelo sistema, não deixadas à escolha livre do modelo. Emojis são zero por padrão e
+  só podem ser liberados no modo `subtle` (no máximo um, contextual).
 - **Modelo padrão:** `anthropic/claude-opus-4.7` (`--model` para trocar). `--limit N` gera uma amostra.
 - **Fluxo:** sempre aprovar o **sample** com o cliente antes de gerar o lote inteiro.
+- **Preview integrado:** `tools/generate_echo_preview.py` une fichas de publicação e cards de
+  LinkedIn em uma subpágina isolada do hub. Marco atual: `/accesstage/lote3-echo/`.
 
 ---
 
