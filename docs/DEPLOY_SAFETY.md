@@ -21,6 +21,16 @@ Um deploy de `output/preview` incompleto derrubou conteúdo aninhado da Preçola
 
 Em 29/07/2026, o `safe_deploy.py` bloqueou corretamente um novo deploy porque havia 746 paths live ausentes localmente. O procedimento `tools/mirror_live_preview.py` recompôs esses arquivos diretamente da release ativa, **sem apagar ou sobrescrever** arquivos locais; só depois a paridade permitiu o deploy do Lote 3 + Sowads Echo.
 
+## Correções no safe_deploy.py (04/08/2026)
+
+Três defeitos apareceram ao publicar o pacote do Lote 3 e foram corrigidos:
+
+1. **Checagem olhava o site errado no target `hub`.** O script tinha `SITE = "sowads-orbit"` fixo, mas o target `hub` publica no site **`sowads`** (ver `.firebaserc`). A paridade do hub comparava a pasta local do hub com os arquivos do *outro* site e abortava sempre, com um relatório assustador de "1063 arquivos sumiriam". Agora há `TARGET_SITE = {"accesstage": "sowads-orbit", "hub": "sowads"}` e a checagem consulta o site do target. O `--project` do firebase continua sendo o projeto `sowads-orbit`.
+2. **Conta do gcloud.** O script usava só a conta ativa; se ela não for a dona do projeto (ou o token expirou), quebrava com erro de reauth. Agora aceita `--account <email>` / env `SOWADS_GCLOUD_ACCOUNT` e, sem isso, procura sozinho uma conta credenciada que funcione. A conta do projeto é **caiorcastro@gmail.com**.
+3. **SSL e a namespace `/__/`.** Trocado `urllib` por `requests` (o Python do macOS costuma vir sem CA raiz). E os paths `/__/firebase/init.js|init.json` são **injetados pelo próprio Firebase Hosting**: nunca vêm da pasta local, então eram um falso positivo que travava o deploy do hub. Passaram a ser ignorados na comparação.
+
+Consequência prática: um "⛔ sumiriam" no target `hub` antes desta data podia ser falso alarme. A partir daqui, se aparecer, é real.
+
 ## Regras (invioláveis)
 
 1. **NUNCA** rode `firebase deploy` direto. O hook `PreToolUse` bloqueia (tools/guard_firebase_deploy.py).

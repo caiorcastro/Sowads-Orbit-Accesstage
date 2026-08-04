@@ -160,6 +160,11 @@ Estrutura de sowads.web.app:
 
 Para adicionar novo cliente: gerar preview em `output/sowads-hosting/<cliente>/`, adicionar card no index.html e redeploy.
 
+**Deploy na prática (04/08/2026):** use sempre `python3 tools/safe_deploy.py <accesstage|hub>`. Se a
+conta ativa do gcloud não for a do projeto, passe `--account caiorcastro@gmail.com` (o script também
+procura sozinho uma conta válida). Os dois targets vão para **sites diferentes**: `accesstage` →
+site `sowads-orbit`, `hub` → site `sowads`. Ver `docs/DEPLOY_SAFETY.md`.
+
 **Regra:** Nunca subir dados de custo/token/velocidade nos previews — são para controle interno.
 
 ## Mapeamento de categorias CSV → WordPress
@@ -246,11 +251,49 @@ cliente: `docs/CLOUDFLARE_PAGES_MIGRATION.md`.
 - **Fluxo obrigatório: aprovar o SAMPLE com o cliente antes de gerar o lote inteiro.** Nunca gerar tudo sem OK.
 - Geradores de tema irmãos: `tools/gen_temas_aprovacao.py` (xlsx de aprovação por lote, deduplicado) e `tools/gen_temas_mes.py`.
 
-### Marco atual — Lote 3 + Sowads Echo (2026-07-29)
+### Marco atual — Lote 3 + Sowads Echo (2026-07-29, entrega fechada em 2026-08-04)
 
 - 12 artigos Lote 3 (QA 100) geraram 12 posts do Celso e pacote de aprovação.
 - Preview publicado em `https://sowads-orbit.web.app/accesstage/lote3-echo/`.
 - Entregáveis locais (gitignored): `output/celso/sowads_echo_lote3.docx`, JSON e ZIP completo.
+
+**Entrega ao cliente (04/08/2026).** O cliente reclamou que não achava o Echo nem o ZIP. Causa: o
+ZIP nunca esteve hospedado (só existia local) e o hub `sowads.web.app` não linkava o Lote 3 — o
+preview do Echo só existia em `sowads-orbit.web.app`, e quem entrava pelo hub via apenas o batch 4.
+Corrigido:
+
+- `output/preview/accesstage/lote3-echo/Accesstage_Veragi_Lote3.zip` (14 MB) — pacote de entrega
+  com `artigos/` (12 HTMLs + index + images + imagens-coringa), `sowads-echo/` (DOCX + JSON) e
+  `LEIA-ME.txt` com o passo a passo de publicação. **É este o ZIP a mandar para o cliente.**
+- A página do preview ganhou dois botões no topo: baixar o ZIP completo e baixar só o DOCX.
+- O hub ganhou um card "Lote 3 + Sowads Echo" apontando para o preview (URL absoluta, sem duplicar
+  os arquivos no site do hub).
+
+Link único para mandar ao cliente: `https://sowads-orbit.web.app/accesstage/lote3-echo/`
+(ZIP direto: `.../Accesstage_Veragi_Lote3.zip`).
+
+**Regra de entrega:** todo lote novo precisa do ZIP hospedado junto do preview e de um card no hub.
+Preview sem ZIP baixável já gerou reclamação de cliente uma vez.
+
+### Subir artigos como RASCUNHO no blog (HubSpot)
+
+O blog da Accesstage é **HubSpot** (portal 457604), não WordPress — `engine/publisher.py` (XML-RPC)
+não serve aqui. Quem faz isso é **`tools/hubspot_publisher.py`**, que cria os posts com
+`state: DRAFT` (nunca publica): o cliente revisa e aprova dentro do HubSpot.
+
+```bash
+python3 tools/hubspot_publisher.py --from_csv output/articles/lote_veragi_lote3_claude-opus-4-7_batch1_artigos_1_a_12.csv --dry_run
+python3 tools/hubspot_publisher.py --from_csv <csv> --test_one   # 1 artigo, conferir no HubSpot
+python3 tools/hubspot_publisher.py --from_csv <csv>              # os 12 como rascunho
+```
+
+**Bloqueio atual: não há credencial HubSpot** no `.env` nem em `client/credentials.env`. Precisa de
+uma das duas, e ambas dependem da Accesstage:
+- `HUBSPOT_API_KEY=pat-na1-...` — Private App (scope `content`), criado pelo admin da Accesstage. É o caminho estável.
+- `HUBSPOT_COOKIE=...` — cookie `hubspotapi` de uma sessão logada no portal. Dura ~60 min, serve para um lote.
+
+Imagem destacada não sobe por essa via: o HubSpot referencia imagem por URL do File Manager, então
+as PNGs de `output/images/` precisam ser subidas no HubSpot antes (ou definidas manualmente).
 - Todo novo preview deve ter URL de subpasta própria, nunca substituir preview anterior.
 - A composição visual do preview é uma grade de pares: resumo com imagem do artigo à esquerda e
   post em estilo LinkedIn à direita; há dois pares por linha em desktop e uma coluna no mobile.
