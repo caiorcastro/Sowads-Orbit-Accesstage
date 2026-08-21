@@ -278,22 +278,39 @@ Preview sem ZIP baixável já gerou reclamação de cliente uma vez.
 ### Subir artigos como RASCUNHO no blog (HubSpot)
 
 O blog da Accesstage é **HubSpot** (portal 457604), não WordPress — `engine/publisher.py` (XML-RPC)
-não serve aqui. Quem faz isso é **`tools/hubspot_publisher.py`**, que cria os posts com
-`state: DRAFT` (nunca publica): o cliente revisa e aprova dentro do HubSpot.
+não serve aqui. O caminho operacional sem escopo API `content` é
+**`tools/hubspot_browser_import.py`**, que usa o importador CSV oficial do HubSpot em um perfil
+Chrome persistente e importa somente como draft: o cliente revisa e aprova dentro do HubSpot.
 
 ```bash
-python3 tools/hubspot_publisher.py --from_csv output/articles/lote_veragi_lote3_claude-opus-4-7_batch1_artigos_1_a_12.csv --dry_run
-python3 tools/hubspot_publisher.py --from_csv <csv> --test_one   # 1 artigo, conferir no HubSpot
-python3 tools/hubspot_publisher.py --from_csv <csv>              # os 12 como rascunho
+python3 tools/hubspot_browser_import.py --csv output/articles/<batch>.csv
+python3 tools/hubspot_browser_import.py --csv output/articles/<batch>.csv --browser
+python3 tools/hubspot_browser_import.py --csv output/articles/<batch>.csv --browser --commit-drafts
 ```
 
-**Bloqueio atual: não há credencial HubSpot** no `.env` nem em `client/credentials.env`. Precisa de
-uma das duas, e ambas dependem da Accesstage:
-- `HUBSPOT_API_KEY=pat-na1-...` — Private App (scope `content`), criado pelo admin da Accesstage. É o caminho estável.
-- `HUBSPOT_COOKIE=...` — cookie `hubspotapi` de uma sessão logada no portal. Dura ~60 min, serve para um lote.
+Proteções obrigatórias do fluxo:
+- o preflight consulta cada URL pública e bloqueia HTTP 200;
+- QA abaixo de 80, status diferente de draft, conteúdo com erro e duplicatas internas são bloqueados;
+- o importador nunca marca sobrescrita de conteúdo existente;
+- `--commit-drafts` ainda exige digitar `IMPORTAR DRAFTS` no terminal;
+- após a importação, cada título é buscado no gerenciador e precisa aparecer como Draft/Rascunho;
+- o perfil `.hubspot-browser-profile/` é gitignored e nunca deve ser versionado;
+- autor padrão atual: `Nyara Arcieri`; tags padrão: `Soluções Financeiras,Blog`.
 
-Imagem destacada não sobe por essa via: o HubSpot referencia imagem por URL do File Manager, então
-as PNGs de `output/images/` precisam ser subidas no HubSpot antes (ou definidas manualmente).
+O fluxo completo foi validado ao vivo em 21/08/2026 com dois artigos prefixados `[TESTE]`:
+2/2 drafts criados pelo CSV, corpo e estrutura idênticos à origem, imagem/autor/tags/metadados
+confirmados na prévia e ambos excluídos depois da auditoria. A automação replica as telas reais
+`Carregar → Mapa → Importar` e mapeia automaticamente as nove colunas do CSV.
+
+O lote 3 (12 artigos) foi reconciliado em 21/08/2026: 12/12 URLs retornaram HTTP 200 e foram
+bloqueadas pelo novo preflight. Não reimportar esse lote.
+
+`tools/hubspot_publisher.py` (API) permanece como alternativa futura somente se houver token com
+escopo `content`; a Personal Access Key existente do usuário `orbit-ai` não possui esse escopo e
+não deve ser desativada sem avaliar dependências.
+
+O importador CSV aceita a URL da imagem destacada. O script preenche `Featured image` com
+`img_blog`; a revisão do resultado deve confirmar imagem, alt text e disponibilidade da URL.
 - Todo novo preview deve ter URL de subpasta própria, nunca substituir preview anterior.
 - A composição visual do preview é uma grade de pares: resumo com imagem do artigo à esquerda e
   post em estilo LinkedIn à direita; há dois pares por linha em desktop e uma coluna no mobile.

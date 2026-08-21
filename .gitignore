@@ -11,5 +11,8 @@ __pycache__/
 *.env
 client/credentials.env
 
+# HubSpot browser automation (authenticated Chrome profile)
+.hubspot-browser-profile/
+
 # Claude
 .claude/

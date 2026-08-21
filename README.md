@@ -10,12 +10,12 @@ Desenvolvido pela [Sowads](https://sowads.com.br) — agência especializada em 
 
 Dado um CSV de temas, o Sowads Orbit:
 
-1. **Gera artigos HTML** prontos para WordPress, com SEO/AIO incorporado — sem links, sem imagens no conteúdo, sem JSON-LD
+1. **Gera artigos HTML** prontos para o editor do HubSpot, com SEO/AIO incorporado — sem links, sem imagens no conteúdo, sem JSON-LD
 2. **Valida a qualidade** (score 0–100) e **corrige automaticamente** quando necessário (self-healing)
 3. **Atribui imagens** da biblioteca existente do WordPress via matching temático (Jaccard)
 4. **Gera copies sociais** para LinkedIn, Instagram e Facebook derivados de cada artigo
 5. **Exporta events CSV** no formato do backend Sowads para agendamento de posts
-6. **Publica no WordPress** via XML-RPC com imagem destacada e categoria corretas
+6. **Prepara e importa drafts no HubSpot** pelo importador CSV oficial, controlado via Chrome
 7. **Gera mockup sites** (preview HTML local) para aprovação do cliente antes de publicar
 
 ---
@@ -37,6 +37,7 @@ tools/
   bing_indexnow.py      ← push IndexNow para Bing
   check_models.py       ← lista modelos disponíveis no OpenRouter
   preview_generator.py  ← gera HTML mock do blog para aprovação do cliente
+  hubspot_browser_import.py ← prepara CSV oficial e controla a importação de drafts no Chrome
   merge_retry.py        ← mescla CSV de retry no batch principal
   benchmark.py          ← benchmark de múltiplos modelos (output/testes/)
   auditor.py            ← auditoria semântica e SEO via LLM avaliador
@@ -76,13 +77,16 @@ python3 tools/preview_generator.py
 # 3. Gerar copies sociais + events CSV
 python3 engine/social_agent.py --count 40
 
-# 4. Validar 1 artigo antes de publicar
-python3 engine/publisher.py --test_one
+# 4. Preparar CSV HubSpot com preflight anti-duplicidade
+python3 tools/hubspot_browser_import.py --csv output/articles/<batch>.csv
 
-# 5. Publicar lote (só após validar --test_one)
-python3 engine/publisher.py --all
+# 5. Abrir o importador oficial no Chrome (para antes da confirmação final)
+python3 tools/hubspot_browser_import.py --csv output/articles/<batch>.csv --browser
 
-# 6. Indexar no Bing (opcional)
+# 6. Permitir importação como draft (ainda exige digitar IMPORTAR DRAFTS)
+python3 tools/hubspot_browser_import.py --csv output/articles/<batch>.csv --browser --commit-drafts
+
+# 7. Indexar no Bing (opcional, apenas depois de publicar)
 python3 tools/bing_indexnow.py
 
 # Monitorar progresso em tempo real
@@ -110,7 +114,7 @@ Benchmarks completos (25 modelos testados): https://caiorcastro.github.io/orbit-
 ### 1. Dependências
 
 ```bash
-pip install requests pandas colorama
+pip install requests pandas colorama playwright pytest
 ```
 
 ### 2. Credenciais
@@ -121,13 +125,11 @@ OPENROUTER_API_KEY=sk-or-v1-...
 BING_INDEXNOW_KEY=opcional
 ```
 
-`client/credentials.env` (gitignored):
-```env
-WORDPRESS_URL=https://blog.accesstage.com.br
-WORDPRESS_USER=usuario
-WORDPRESS_PASSWORD=app-password-do-wp
-SOWADS_ORG_ID=seu-org-id
-```
+O blog da Accesstage é HubSpot, portal `457604`. A automação de drafts usa um perfil
+Chrome local persistente em `.hubspot-browser-profile/` (gitignored), sem copiar cookies para
+arquivos `.env`. No primeiro `--browser`, faça login interativamente na janela aberta pelo script.
+Depois disso, seleção do Blog Accesstage, upload, mapeamento das nove colunas, importação como
+rascunho e reconciliação dos títulos/status são automatizados.
 
 ### 3. Temas de entrada
 
@@ -212,10 +214,11 @@ Como funciona:
 
 1. **OpenRouter sempre** — nunca API direta
 2. **Zero hyperlinks, `<img>`, `<figure>` ou JSON-LD** no conteúdo
-3. **Sem H1 no conteúdo** — WordPress usa o título do post como H1
+3. **Sem H1 no conteúdo** — HubSpot usa o título do post como H1
 4. **FAQ HTML puro** com `<section class="faq-section">`
 5. **Categorias do CSV de temas** — nunca inferir
-6. **Publicação manual** — `--test_one` → revisar → `--all`
+6. **Draft-first no HubSpot** — preflight público → CSV oficial → mapear → revisar → importar como drafts
+7. **Nunca sobrescrever conteúdo existente** no importador HubSpot
 
 ---
 

@@ -93,7 +93,7 @@ Temas CSV → content_engine → output/articles/
                 │
                 ├── social_agent → output/social/ + output/events/
                 │
-                └── publisher → WordPress (draft → revisão → publish)
+                └── hubspot_browser_import → HubSpot (CSV oficial → draft → revisão)
                                     │
                                     └── bing_indexnow → Bing
 ```
@@ -257,8 +257,11 @@ python3 engine/media_indexer.py
 # Monitorar progresso em tempo real
 python3 tools/monitor.py
 
-# Listar rascunhos no WP
-python3 engine/publisher.py --list
+# Preparar lote para o importador oficial do HubSpot
+python3 tools/hubspot_browser_import.py --csv output/articles/<batch>.csv
+
+# Revisar no navegador; adicionando --commit-drafts, confirmar a criação dos rascunhos
+python3 tools/hubspot_browser_import.py --csv output/articles/<batch>.csv --browser
 
 # Validar artigos já gerados
 python3 engine/qa_validator.py --path "output/articles/*.csv"
