@@ -12,6 +12,7 @@ import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 import pandas as pd
+from bs4 import BeautifulSoup
 
 # Resolve project root so this script works from any CWD
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -516,6 +517,105 @@ def parse_response(response_text):
     return post_content, meta_title, meta_desc
 
 
+def clamp_meta_text(value, max_chars):
+    """Limita metadados em palavra completa, sem corte no meio."""
+    value = re.sub(r'\s+', ' ', (value or '').strip())
+    if len(value) <= max_chars:
+        return value
+
+    clipped = value[:max_chars + 1]
+    if len(clipped) > max_chars and not clipped[max_chars].isspace():
+        clipped = clipped[:max_chars].rsplit(' ', 1)[0]
+    else:
+        clipped = clipped[:max_chars]
+    return clipped.rstrip(' ,;:-')
+
+
+def sanitize_accesstage_compliance(text):
+    """Normaliza termos vetados pelo guia editorial sem alterar o HTML."""
+    replacements = [
+        (r'\bbanco de dados\b', 'base de dados'),
+        (r'\bbanco central\b', 'autoridade monetária'),
+        (r'\bplanilhas\b', 'controles manuais'),
+        (r'\bplanilha\b', 'controle manual'),
+        (r'\bbanco\b', 'instituição financeira'),
+        (r'\bfinanciamentos\b', 'operações de crédito'),
+        (r'\bfinanciamento\b', 'crédito'),
+        (r'\bcartões\b', 'meios de pagamento'),
+        (r'\bcartão\b', 'meio de pagamento'),
+        (r'\bdownloads\b', 'exportações'),
+        (r'\bdownload\b', 'exportação'),
+        (r'\bempréstimos\b', 'linhas de crédito'),
+        (r'\bempréstimo\b', 'linha de crédito'),
+        (r'\bvalores a receber\b', 'recebíveis'),
+        (r'\bfgts\b', 'fundo trabalhista'),
+        (r'\bmei\b', 'microempreendedor individual'),
+        (r'\bpessoal\b', 'equipe'),
+        (r'\bgov(?:\.br)?\b', 'portal público'),
+        (r'\bo que significa\b', 'qual é o impacto de'),
+        (r'\bo que é\b', 'como funciona'),
+        (r'\bsignificado\b', 'impacto'),
+        (r'\bgrátis\b|\bgratis\b|\bgratuit[oa]s?\b', 'sem custo adicional'),
+    ]
+
+    def replace_preserving_initial(match, replacement):
+        if match.group(0)[:1].isupper():
+            return replacement[:1].upper() + replacement[1:]
+        return replacement
+
+    result = text or ''
+    for pattern, replacement in replacements:
+        result = re.sub(
+            pattern,
+            lambda match, repl=replacement: replace_preserving_initial(match, repl),
+            result,
+            flags=re.IGNORECASE,
+        )
+    return result
+
+
+def remove_unsupported_claims(html):
+    """Remove alegações quantitativas ou atribuídas sem fonte versionada."""
+    soup = BeautifulSoup(html or '', 'html.parser')
+    risky_patterns = [
+        r'\d+(?:[.,]\d+)?\s*%',
+        r'\b(?:segundo|conforme)\s+(?:dados|estimativas|pesquisas?|estudos?|benchmarks?)\b',
+        r'\b(?:dados|pesquisas?|estudos?)\s+(?:internos|da|do|de)\s+',
+        r'\bcustar milhões\b',
+        r'\bmilhares de transações por segundo\b',
+    ]
+    risky = re.compile('|'.join(risky_patterns), re.IGNORECASE)
+
+    for node in list(soup.find_all(string=True)):
+        if node.parent and node.parent.name in {'style', 'script'}:
+            continue
+        parts = re.split(r'(?<=[.!?])\s+', str(node))
+        kept = [part for part in parts if part and not risky.search(part)]
+        node.replace_with(' '.join(kept))
+
+    # A remoção de uma alegação pode esvaziar o elemento que a continha.
+    for tag in list(soup.find_all(['p', 'li', 'h2', 'h3'])):
+        if not tag.get_text(' ', strip=True):
+            tag.decompose()
+    for tag in list(soup.find_all(['ul', 'ol'])):
+        if not tag.find(['li']):
+            tag.decompose()
+
+    # Linguagem de possibilidade: o conteúdo não deve prometer resultado.
+    softened = str(soup)
+    soft_replacements = [
+        (r'\bgarante que\b', 'ajuda a assegurar que'),
+        (r'\bgarantindo\b', 'favorecendo'),
+        (r'\bgarantir\b', 'apoiar'),
+        (r'\beliminando\b', 'reduzindo'),
+        (r'\belimina\b', 'reduz'),
+        (r'\bsem interrupções\b', 'com maior continuidade'),
+    ]
+    for pattern, replacement in soft_replacements:
+        softened = re.sub(pattern, replacement, softened, flags=re.IGNORECASE)
+    return softened
+
+
 # ─────────────────────────────────────────────
 # Self-Healing
 # ─────────────────────────────────────────────
@@ -973,6 +1073,10 @@ def main():
 
                 # 3. Parse
                 post_content, meta_title, meta_desc = parse_response(response_text)
+                post_content = sanitize_accesstage_compliance(post_content)
+                post_content = remove_unsupported_claims(post_content)
+                meta_title = clamp_meta_text(meta_title, 60)
+                meta_desc = clamp_meta_text(meta_desc, 155)
                 plain_raw = re.sub(r'<[^>]+>', ' ', post_content)
                 wc        = len(plain_raw.split())
                 h2s       = len(re.findall(r'<h2[^>]*>', post_content))
@@ -996,6 +1100,9 @@ def main():
                     api_key, args.model, args.fallback_model,
                     post_content, topic, validator, pfx=pfx
                 )
+                healed_content = sanitize_accesstage_compliance(healed_content)
+                healed_content = remove_unsupported_claims(healed_content)
+                final_score, issues = validator.grade_article_raw(healed_content)
                 if retries > 0:
                     wc_h = len(re.sub(r'<[^>]+>', ' ', healed_content).split())
                     tprint(f"  {Colors.OKCYAN}{pfx}[HEAL] Após {retries}x: {wc_h}p | Score final: {final_score}/100{Colors.ENDC}")

@@ -114,7 +114,7 @@ Benchmarks completos (25 modelos testados): https://caiorcastro.github.io/orbit-
 ### 1. Dependências
 
 ```bash
-pip install requests pandas colorama playwright pytest
+pip install requests pandas colorama playwright pytest beautifulsoup4
 ```
 
 ### 2. Credenciais

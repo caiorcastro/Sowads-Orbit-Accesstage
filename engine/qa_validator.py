@@ -20,6 +20,25 @@ class OrbitValidator:
             "has_lists": r'<[uo]l[\s>]',
             "min_length": 800  # chars
         }
+        # Compliance editorial Accesstage. As fronteiras evitam falsos
+        # positivos como "banco" dentro de "bancária".
+        self.forbidden_patterns = {
+            "banco": r"\bbanco\b",
+            "planilhas": r"\bplanilhas?\b",
+            "grátis/gratuito": r"\b(?:grátis|gratis|gratuit[oa]s?)\b",
+            "financiamento": r"\bfinanciamentos?\b",
+            "cartão": r"\bcartões?\b",
+            "download": r"\bdownloads?\b",
+            "empréstimo": r"\bempréstimos?\b",
+            "MEI": r"\bmei\b",
+            "pessoal": r"\bpessoal\b",
+            "FGTS": r"\bfgts\b",
+            "valores a receber": r"\bvalores a receber\b",
+            "gov": r"\bgov\b",
+            "o que é": r"\bo que é\b",
+            "significado": r"\bsignificado\b",
+            "o que significa": r"\bo que significa\b",
+        }
 
     def _extract_text(self, html):
         """Strip HTML tags and return plain text."""
@@ -84,6 +103,21 @@ class OrbitValidator:
             score -= 10
             issues.append("[WARN] Seção FAQ HTML ausente (<section class='faq-section'>).")
 
+        # 4b. Qualquer termo proibido torna o artigo inelegível e força o
+        # self-healing antes de a saída poder seguir para o HubSpot.
+        plain_for_compliance = self._extract_text(content).lower()
+        forbidden_hits = [
+            label for label, pattern in self.forbidden_patterns.items()
+            if re.search(pattern, plain_for_compliance, re.IGNORECASE)
+        ]
+        if forbidden_hits:
+            score -= 30
+            issues.append(
+                "[CRITICAL] Compliance Accesstage: termos proibidos detectados: "
+                + ", ".join(forbidden_hits)
+                + ". Reescreva as frases sem esses termos."
+            )
+
         # 5. JSON-LD — não verificado: removido do pipeline por decisão editorial
 
         # 6. Content length
@@ -106,6 +140,12 @@ class OrbitValidator:
         elif word_count > 1500:
             score -= 5
             issues.append(f"[WARN] Word count acima do ideal ({word_count} palavras, alvo máx. 1500).")
+
+        # A revisão editorial exige ao menos três seções principais.
+        h2_count = len(re.findall(r'<h2[\s>]', content, re.IGNORECASE))
+        if h2_count < 3:
+            score -= 15
+            issues.append(f"[WARN] Poucas seções H2 ({h2_count}, mín. 3).")
 
         # 8. Keyword density
         density, keywords = self._keyword_density(content)
